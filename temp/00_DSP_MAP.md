@@ -86,9 +86,9 @@ Runtime-настройки некоторых параметров могут з
 - Полный бюджет времени активного RX-пути.
 - Источник аналоговых I/Q и микрофонных данных на ESP32.
 - Окончательный block size, DMA и распределение задач.
-- Добавлены host-side модели активного RX CIC и Hilbert/I-delay; их связка находится в [reference/rx_chain.py](reference/rx_chain.py).
-- CIC schedule сверяется с прямой двухступенчатой формулой; Hilbert проверяется impulse response; integration tests проверяют границу att2 и Q pair pipeline.
-- ADC mux/sample timing, I midpoint interpolation, интеграция slow_dsp, NR/IIR, аудио-интерполятор и TX reference ещё не завершены; спектральные результаты не измерены.
+- Добавлены host-side модели активного RX CIC, Hilbert/I-delay и базового SSB post-processing; их частичная сквозная связка находится в [reference/rx_ssb_chain.py](reference/rx_ssb_chain.py).
+- CIC schedule сверяется с прямой двухступенчатой формулой; Hilbert проверяется impulse response; integration tests проверяют границу att2, Q pair pipeline и передачу quadrature sample в fast AGC/volume/clipping.
+- ADC mux/sample timing, I midpoint interpolation, NR/IIR, AM/FM, аудио-интерполятор и TX reference ещё не завершены; спектральные результаты не измерены.
 
 Подробности: [RX](01_RX_PATH.md), [TX](02_TX_PATH.md), [состояние и время](03_STATE_AND_TIMING.md), [lifecycle состояния](12_STATE_LIFECYCLE.md), [варианты переноса](04_PORTING_OPTIONS.md), [черновик DSP API](10_DSP_INTERFACE_DRAFT.md), [план эталонных тестов](11_REFERENCE_TEST_PLAN.md), [host-side CIC model](reference/), [TX phase scaling](13_TX_PHASE_SCALING.md).
 Дополнительная детализация: [восьмифазный CIC и коэффициенты](08_RX_CIC_PHASES.md), [ADC timing и I/Q mux pipeline](09_ADC_TIMING.md).
