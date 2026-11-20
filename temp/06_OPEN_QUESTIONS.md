@@ -38,7 +38,7 @@
 - [ ] Получить эталонный результат на синусе/двухтональном тесте.
 - [ ] Проверить полярность USB/LSB и измерить подавление нежелательной боковой полосы.
 - [ ] Определить спецификацию выхода RX DSP: sample rate, format, latency.
-- [ ] Сравнить IIR response с AVR-GCC на fixed vectors, выполнить int16 range audit и измерить transient после переключения filt, bypass/re-enable и mode; static IIR histories не сбрасываются фильтровым обработчиком.
+- [ ] Сверить IIR response с AVR-GCC fixed vectors и установить фактическое signed-overflow поведение; измерить transient после переключения filt, bypass/re-enable и mode. Wide range audit уже нашёл prefilter sum 37315 для всех SSB filters и feedback sum 43357 для filt=1 (temp/18_RX_POST_NR_IIR.md).
 
 ## 3. TX — вопросы
 
@@ -69,7 +69,7 @@
 2. Закрыть временную модель ADC: определить ISR-to-ADSC offsets, ADC prescaler phase и I/Q aperture; analog acquisition/settling — отдельным измерением.
 3. Установить фактическую AVR-GCC арифметику Hilbert на overrange vector: получить точные flags/disassembly и сравнить реальный результат с wide и wrap кандидатами.
 4. Подключить startup timing model к полному RX reference harness и подготовить фиксированные синусоидальные/двухтональные векторы с промежуточными контрольными точками.
-5. Сверить NR/IIR wide models с AVR fixed vectors и выполнить int16 range audit; затем добавить AM/FM branches.
+5. Получить AVR-GCC golden outputs для Hilbert/NR/IIR и установить фактическое signed-overflow поведение; затем добавить AM/FM branches.
 6. Подготовить аналогичную модель SSB TX, включая integer atan2 macro semantics, MAX_DP и ADC pipeline.
 7. Проверить и уточнить API из temp/10_DSP_INTERFACE_DRAFT.md по результатам reference harness.
 8. Только после этого начинать перенос на ESP32.
