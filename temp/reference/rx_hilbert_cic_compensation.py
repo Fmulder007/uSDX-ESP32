@@ -12,6 +12,25 @@ from typing import Sequence, Tuple
 import cmath
 import math
 
+COMPENSATED_HILBERT_17_MINIMAX_Q15: Tuple[int, ...] = (
+    335, -691, 316, -2040, 245, -5312, -123, -19884,
+    0,
+    19884, 123, 5312, -245, 2040, -316, 691, -335,
+)
+
+COMPENSATED_HILBERT_19_MINIMAX_Q15: Tuple[int, ...] = (
+    -458, -23, -1156, -64, -2594, -148, -5757, -372, -20054,
+    0,
+    20054, 372, 5757, 148, 2594, 64, 1156, 23, 458,
+)
+
+COMPENSATED_HILBERT_21_MINIMAX_Q15: Tuple[int, ...] = (
+    184, -266, 259, -889, 304, -2285, 203, -5507, -157, -19958,
+    0,
+    19958, 157, 5507, -203, 2285, -304, 889, -259, 266, -184,
+)
+
+# Longer least-squares compensation fits retained as comparison options.
 COMPENSATED_HILBERT_23_Q15: Tuple[int, ...] = (
     -122, 21, -445, 31, -1152, 12, -2570, -72, -5729, -324, -20042,
     0,
