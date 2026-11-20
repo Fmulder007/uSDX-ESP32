@@ -80,15 +80,6 @@ prev_phase, phase, dp, wrap через _UA и MAX_DP требуют провер
 
 **Решение пока не принято:** не оптимизировать математику и не менять разрядность до появления эталонных тестов.
 
-## 7. RX CIC и Hilbert — результаты первого range audit
-
-Подробный расчёт и входной вектор: [17_RX_NUMERIC_RANGE.md](17_RX_NUMERIC_RANGE.md).
-
-- Для ADC-центрированных значений [-511, 512] активная CIC-цепочка с M_SR=1 укладывается в signed int16: raw output находится в [-16352, 16384].
-- Raw CIC DC gain равен 32; при default att2=2 gain перед Hilbert равен 8. Source smeter() нормирует через R*8=32, что согласуется с raw gain 32. Комментарий R=4, providing 12dB gain не является scaling-инструкцией для активного фильтра.
-- Для full-scale 650 Hz Q sine и default att2=2 третий числитель Hilbert достигает 34915, за пределами signed int16. Python wide model поэтому не является bit-exact AVR oracle.
-- Открыто: получить AVR-GCC disassembly/runtime vector и определить фактическое поведение signed overflow до выбора ESP32 arithmetic.
-
 ## 6. Особый случай: макрос _atan2() в TX
 
 Не переводить вызов _atan2(abs(q)/abs(i)) в последовательность «сначала z = abs(q)/abs(i), затем вычислить полином».
@@ -111,3 +102,12 @@ prev_phase, phase, dp, wrap через _UA и MAX_DP требуют провер
 Сравнивать следует не только среднюю ошибку угла, но и максимальную ошибку, симметрию квадрантов, поведение на осях и фазовый delta между соседними samples.
 
 Отдельно см. [TX phase scaling и MAX_DP](13_TX_PHASE_SCALING.md): там разобраны modulo dp, точный предел для filt=0..3 и коррекция prev_phase при ограничении.
+
+## 7. RX CIC и Hilbert — результаты первого range audit
+
+Подробный расчёт и входной вектор: [17_RX_NUMERIC_RANGE.md](17_RX_NUMERIC_RANGE.md).
+
+- Для ADC-центрированных значений [-511, 512] активная CIC-цепочка с M_SR=1 укладывается в signed int16: raw output находится в [-16352, 16384].
+- Raw CIC DC gain равен 32; при default att2=2 gain перед Hilbert равен 8. Source smeter() нормирует через R*8=32, что согласуется с raw gain 32. Комментарий R=4, providing 12dB gain не является scaling-инструкцией для активного фильтра.
+- Для full-scale 650 Hz Q sine и default att2=2 третий числитель Hilbert достигает 34915, за пределами signed int16. Python wide model поэтому не является bit-exact AVR oracle.
+- Открыто: получить AVR-GCC disassembly/runtime vector и определить фактическое поведение signed overflow до выбора ESP32 arithmetic.
