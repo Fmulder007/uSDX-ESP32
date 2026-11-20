@@ -4,7 +4,7 @@ Stages:
     alternating logical I/Q events
       -> active NEW_RX CIC
       -> source process() boundary (att2 + Hilbert + I delay)
-      -> baseline SSB slow_dsp() (fast AGC + volume + clamp)
+      -> baseline SSB slow_dsp() (fast AGC + volume + optional NR/SSB IIR)
 
 The input begins after ADC channel demultiplexing. It does not model ADMUX,
 ADC conversion pipeline or the original midpoint interpolation on I.
@@ -20,7 +20,7 @@ from rx_ssb_post import RxSsbPostState
 
 @dataclass(frozen=True)
 class RxSsbOutput:
-    """Intermediate quadrature values plus final baseline SSB audio sample."""
+    """Intermediate quadrature values plus final supported SSB audio sample."""
 
     quadrature: RxQuadratureOutput
     audio_sample: int
@@ -33,6 +33,8 @@ class RxSsbReferencePipeline:
     att2: int = 2
     volume: int = 12
     agc: int = 1
+    nr: int = 0
+    filt: int = 0
     cic: RxCicState = field(default_factory=RxCicState)
     quadrature: RxQuadratureState = field(init=False)
     post: RxSsbPostState = field(default_factory=RxSsbPostState)
@@ -51,8 +53,8 @@ class RxSsbReferencePipeline:
             quadrature.ssb_audio_input,
             volume=self.volume,
             agc=self.agc,
-            nr=0,
-            filt=0,
+            nr=self.nr,
+            filt=self.filt,
             mode="USB",
         )
         return RxSsbOutput(quadrature=quadrature, audio_sample=audio)
