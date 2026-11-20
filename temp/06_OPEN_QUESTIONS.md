@@ -22,13 +22,14 @@
 
 - [x] Развернуть все восемь фаз CIC в таблицу входов/регистров/выходов: temp/08_RX_CIC_PHASES.md.
 - [ ] Сверить комментарий исходника о 12 dB CIC gain с коэффициентным масштабом активной реализации и att2.
-- [ ] Зафиксировать временную привязку каждого I/Q отсчёта к таймерному событию, включая first-conversion startup transient и read-previous/start-next pipeline.
+- [x] Смоделировать логическую привязку I/Q к timer event, first ADC register read и read-previous/start-next pipeline: temp/reference/rx_adc_input.py.
+- [ ] Уточнить реальное sample-and-hold aperture, acquisition time и jitter внутри каждого timer event.
 - [x] Зафиксировать наблюдаемое source reset поведение CIC/Hilbert/AGC/IIR при cold start и TX→RX: temp/12_STATE_LIFECYCLE.md.
 - [ ] Проверить переходные процессы cold start, TX→RX и повторного TX на эталонных сигналах.
 - [ ] Проверить диапазон промежуточных значений CIC и Hilbert.
 - [x] Подготовлена отдельная reference-модель базового SSB slow_dsp (fast AGC/volume/clipping, nr=0/filt=0): temp/reference/rx_ssb_post.py.
 - [x] Соединить CIC → Hilbert/I delay → базовый SSB slow_dsp в частичный stateful pipeline: temp/reference/rx_ssb_chain.py.
-- [ ] Добавить в этот pipeline исходный ADC mux/read-previous порядок и midpoint interpolation I.
+- [x] Подключить ADC mux/read-previous порядок и midpoint interpolation I к SSB chain: temp/reference/rx_ssb_adc_chain.py.
 - [ ] Получить эталонный результат на синусе/двухтональном тесте.
 - [ ] Проверить полярность USB/LSB и измерить подавление нежелательной боковой полосы.
 - [ ] Определить спецификацию выхода RX DSP: sample rate, format, latency.
@@ -61,7 +62,7 @@
 1. Завершить state inventory: назначение, момент обновления и reset/lifecycle каждой переменной.
 2. Закрыть временную модель ADC: pipeline, sample-and-hold и I/Q aperture.
 3. Разобрать и проверить масштабирование CIC, включая комментарий о 12 dB gain.
-4. Расширить host-side RX reference model входным ADC mux/read-previous pipeline и I midpoint interpolation.
+4. Проверить ADC reference model на точном AVR sample-and-hold timing, startup result и аналоговом source acquisition.
 5. Добавить NR и IIR с явными состояниями в отдельные RX post blocks; AM/FM — отдельными ветвями.
 6. Подготовить аналогичную модель SSB TX, включая integer atan2 macro semantics, MAX_DP и ADC pipeline.
 7. Проверить и уточнить API из temp/10_DSP_INTERFACE_DRAFT.md по результатам reference harness.
