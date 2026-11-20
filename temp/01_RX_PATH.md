@@ -140,5 +140,6 @@ slow_dsp(ac) вызывается один раз на выходную пару
 
 - [CIC schedule model](reference/rx_cic.py) и [unit tests](reference/test_rx_cic.py): активная восьмифазная последовательность.
 - [Hilbert/I-delay model](reference/rx_quadrature.py) и [unit tests](reference/test_rx_quadrature.py): точное source-expression rounding, 14-value Q history и 7-sample I delay.
+- [Combined partial RX pipeline](reference/rx_chain.py) and [integration tests](reference/test_rx_chain.py): CIC raw output → att2 → Hilbert/I delay.
 
 Эти две модели пока отдельные блоки; полный RX pipeline с ADC mux input и slow_dsp() ещё не объединён.
