@@ -88,5 +88,5 @@ Runtime-настройки некоторых параметров могут з
 - Окончательный block size, DMA и распределение задач.
 - Эталонные тестовые последовательности и спектральные результаты.
 
-Подробности: [RX](01_RX_PATH.md), [TX](02_TX_PATH.md), [состояние и время](03_STATE_AND_TIMING.md), [варианты переноса](04_PORTING_OPTIONS.md), [черновик DSP API](10_DSP_INTERFACE_DRAFT.md).
+Подробности: [RX](01_RX_PATH.md), [TX](02_TX_PATH.md), [состояние и время](03_STATE_AND_TIMING.md), [варианты переноса](04_PORTING_OPTIONS.md), [черновик DSP API](10_DSP_INTERFACE_DRAFT.md), [план эталонных тестов](11_REFERENCE_TEST_PLAN.md).
 Дополнительная детализация: [восьмифазный CIC и коэффициенты](08_RX_CIC_PHASES.md), [ADC timing и I/Q mux pipeline](09_ADC_TIMING.md).
