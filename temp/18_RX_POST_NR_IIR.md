@@ -1,7 +1,7 @@
 # RX post-processing: NR smoother и переключаемые IIR-фильтры
 
 **Источник:** PE1NNZ uSDX snapshot bf8acd31b8a2506c4e1d203dfb283feecae947e1, usdx.ino и usdx_filter.h.
-**Статус:** source flow, NR recurrence и SSB IIR recurrences разобраны; NR/IIR wide reference models с tests подключены к частичной SSB event chain. Для SSB IIR вычислена линейная transfer response и сверена sinus run; AVR integer overflow/range и cold-start/filter-switch golden tests ещё требуют точной проверки.
+**Статус:** source flow, NR recurrence и SSB IIR recurrences разобраны; NR/IIR wide reference models с tests подключены к частичной SSB event chain. Для SSB IIR вычислена линейная transfer response и добавлен первый input-dependent int16 range audit; фактическое AVR integer overflow и cold-start/filter-switch golden tests ещё требуют проверки.
 
 ## 1. Порядок обработки в slow_dsp()
 
@@ -133,7 +133,27 @@ CW branch использует другую пару biquad секций, зат
 
 Следствие: после смены filter, обхода фильтра или переключения SSB/CW старые za*, zb*, zc*, zz* могут попасть в новый filter path. Не следует считать смену filter equivalent к запуску нового filter с нулевыми history. Это требует отдельного transient/reset test. В то же время автоматически обнулять все histories при каждом sample или менять исходное поведение при переносе нельзя.
 
-## 6. Исполняемые IIR reference model
+## 6. Первый SSB IIR intermediate range audit
+
+Для дополнительной проверки вход подавался непосредственно на вход filt_var(), то есть после AGC и volume. Модель считает широкие математические промежуточные значения, не имитируя AVR overflow.
+
+**Вектор A:** синус 2,5 kHz, 7812,5 samples/s, амплитуда 512, 5000 samples.
+
+| Промежуточная величина | filt=1 | filt=2 | filt=3 |
+|---|---:|---:|---:|
+| max abs prefilter sum | **37315** | **37315** | **37315** |
+| max abs stage-1 feedback sum | 29175 | 7834 | 3120 |
+| max abs stage-2 feedback sum | **43357** | 5068 | 1468 |
+
+У всех трёх ветвей общая prefilter sum выходит за signed int16. У filt=1 дополнительно выходит за диапазон второй feedback sum. Это reachable в wide recurrence на конкретном векторе, но после первого переполнения фактическая AVR state trajectory может разойтись с wide baseline.
+
+**Вектор B:** синус 3,9 kHz, амплитуда 128, 5000 samples. Для всех трёх фильтров ни один из перечисленных промежуточных узлов не вышел за signed int16. Это лишь контрольный вектор, не глобальная гарантия диапазона.
+
+Риск важен, потому что filt_var() вызывается **до** финального slow_dsp() clipping [-512,511]. Настройки volume допускают 0…16; при agc=1, volume=16 нет финального right shift перед IIR, а при agc!=1, volume=16 исходный код выполняет left shift на три бита. Значит, нельзя считать, что только финальный audio clip ограничивает внутреннюю IIR арифметику.
+
+Добавлены audit_ssb_iir_intermediates() в reference/rx_numeric_audit.py и два теста в test_rx_numeric_audit.py: overrange vector и low-amplitude control vector. Это range warning по wide trajectory, не утверждение о точном AVR результате.
+
+## 7. Исполняемые IIR reference model
 
 Добавлены:
 
@@ -142,15 +162,15 @@ CW branch использует другую пару biquad секций, зат
 
 Шесть focused recurrence/lifecycle assertions проверены. Модель не воспроизводит AVR signed overflow и не реализует CW filters 4..7.
 
-## 7. Открытые численные вопросы
+## 8. Открытые численные вопросы
 
-- Диапазоны умножений и сумм в SSB IIR для реального AGC/volume output не оценены.
+- Требуется получить AVR-GCC golden values для Hilbert/NR/IIR overflow vectors; нынешний IIR range audit — математический wide trajectory.
 - Для NR in-ea1 должен быть проверен на AVR signed-int overflow при крайних внутренних уровнях.
 - Линейная SSB transfer response уже рассчитана; нужно получить AVR integer response с truncation/overflow и отдельно разобрать CW filters 4..7.
 - Проверить скачок/звон после переключения filt, bypass/re-enable и mode.
 - Проверить, влияет ли 600 Hz CW active branch / disabled 700 Hz alternative на желаемую конфигурацию переноса. При FILTER_700HZ выключенном условная ветка cw_tone==0 исключается препроцессором, поэтому в filt_var() основной 600-Hz block выполняется независимо от cw_tone.
 
-## 8. Исходные участки кода
+## 9. Исходные участки кода
 
 - process_nr(), slow_dsp() и EA() macro:
   https://github.com/threeme3/usdx/blob/bf8acd31b8/usdx.ino#L2156-L2157
