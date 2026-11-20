@@ -90,3 +90,14 @@
 - Добавлен temp/reference/rx_ssb_adc_chain.py, который соединяет ADC input adapter → CIC → att2/Hilbert/I delay → baseline SSB fast AGC/volume/clipping.
 - Полная программная timer-event модель теперь начинается с analog I/Q values, доступных для conversion start на каждом событии; точное sample-and-hold aperture, acquisition settling и jitter внутри conversion пока не моделируются.
 - Исправлен integration test ожидания i_s0za1: на фазе 6 обновляется odd history, а последнее i_s0za1 было записано на фазе 4.
+
+
+### RX ADC: первая конверсия после ADEN — 2026-11-20
+- Повторно проверен adc_start() и подтверждено: ADEN включается, но ADSC в функции закомментирован; первая конверсия начинается только из первого Timer2 RX ISR.
+- Для RX исходник выбирает ADC prescaler=16: ADC clock ≈1,2504375 MHz. Timer2 интервал — 320 CPU cycles ≈15,9944 мкс.
+- По datasheet ATmega328P первая конверсия после ADEN занимает 25 ADC cycles (400 CPU cycles ≈19,993 мкс), обычная — 13 cycles (208 CPU cycles ≈10,396 мкс). Sample-and-hold: 13,5 cycles для первой, 1,5 для обычной.
+- Следствие: event 1 приходит, пока первый conversion ещё выполняется; ADSC повторно устанавливается при уже активной конверсии, а ADC register ещё содержит старое значение. Event 2 получает первый готовый результат ADC1/Q в логическом I slot. На event 4 настоящая I выборка ещё усредняется с предыдущим ошибочно назначенным Q; при стабильной работе I midpoint возвращается к правильной последовательности на следующем I slot.
+- Добавлены temp/reference/rx_adc_timing.py и test_rx_adc_timing.py: четыре теста подтверждают startup stall, назначение первого Q результата, восстановление I/Q cadence и sample-and-hold offsets.
+- Прежняя rx_adc_input.py оставлена как упрощённая логическая модель установившегося режима; сквозная rx_ssb_adc_chain.py пока не подключена к startup timing model.
+- Открыто: точный цикл ISR от входа в обработчик до ADSC, фаза свободного ADC prescaler относительно Timer2, фактический I/Q aperture skew, analog acquisition/settling и эффективная разрядность при ADC clock выше 1 MHz.
+- Подробный разбор: temp/16_RX_ADC_STARTUP_TIMING.md. Использован Microchip ATmega328P datasheet DS40002061A, разделы 24.4–24.5.
