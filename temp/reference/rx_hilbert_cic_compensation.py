@@ -5,7 +5,9 @@ a frequency-dependent I amplitude factor cos(pi*f/31250), while Q is not
 averaged. These candidates therefore approximate that factor in the Q Hilbert
 branch rather than implementing a flat, unity-magnitude Hilbert transform.
 
-They are experimental. The active 15-tap source model is unchanged.
+The 17/19/21-tap tables are minimax relative-error fits; the 23/27-tap tables
+are retained least-squares fits. They are experimental. The active 15-tap
+source model is unchanged.
 """
 
 from typing import Sequence, Tuple
