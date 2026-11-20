@@ -90,5 +90,5 @@ Runtime-настройки некоторых параметров могут з
 - CIC schedule сверяется с прямой двухступенчатой формулой; Hilbert проверяется impulse response; integration tests проверяют границу att2, Q pair pipeline и передачу quadrature sample в fast AGC/volume/clipping.
 - ADC mux/sample timing, I midpoint interpolation, NR/IIR, AM/FM, аудио-интерполятор и TX reference ещё не завершены; спектральные результаты не измерены.
 
-Подробности: [RX](01_RX_PATH.md), [TX](02_TX_PATH.md), [состояние и время](03_STATE_AND_TIMING.md), [lifecycle состояния](12_STATE_LIFECYCLE.md), [варианты переноса](04_PORTING_OPTIONS.md), [черновик DSP API](10_DSP_INTERFACE_DRAFT.md), [план эталонных тестов](11_REFERENCE_TEST_PLAN.md), [host-side CIC model](reference/), [TX phase scaling](13_TX_PHASE_SCALING.md).
+Подробности: [RX](01_RX_PATH.md), [частичный RX reference pipeline](15_RX_REFERENCE_PIPELINE.md), [TX](02_TX_PATH.md), [состояние и время](03_STATE_AND_TIMING.md), [lifecycle состояния](12_STATE_LIFECYCLE.md), [варианты переноса](04_PORTING_OPTIONS.md), [черновик DSP API](10_DSP_INTERFACE_DRAFT.md), [план эталонных тестов](11_REFERENCE_TEST_PLAN.md), [host-side CIC model](reference/), [TX phase scaling](13_TX_PHASE_SCALING.md).
 Дополнительная детализация: [восьмифазный CIC и коэффициенты](08_RX_CIC_PHASES.md), [ADC timing и I/Q mux pipeline](09_ADC_TIMING.md).
