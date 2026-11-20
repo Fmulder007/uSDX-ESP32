@@ -1,73 +1,78 @@
-# RX Hilbert: фактическое подавление боковой полосы
+# Hilbert FIR: isolated response versus the complete RX image-rejection path
 
-**Источник коэффициентов:** PE1NNZ uSDX, snapshot bf8acd31b8a2506c4e1d203dfb283feecae947e1, `usdx.ino`, active `process()` Hilbert expression.
-**Статус:** coefficient response рассчитана аналитически и повторена time-domain тестом на двух квадратурных ориентациях. Верхняя граница 3400 Hz не подтверждает комментарий источника о 43 dB rejection.
+**Important correction:** a standalone Hilbert response is not the same as the source's image-rejection scenario. The input path applies a two-sample midpoint average to I before the CIC. That operation creates a frequency-dependent I/Q gain mismatch which the original Hilbert filter partly compensates.
 
-## 1. FIR, реализованный исходным выражением
+## 1. Isolated Hilbert result
 
-Hilbert qh использует 15 коэффициентных позиций (нечётные позиции нулевые), нормировка /128:
+The current source coefficient sequence is:
 
-    h = [-2, 0, -8, 0, -21, 0, -79, 0, 79, 0, 21, 0, 8, 0, 2] / 128
+    [-2, 0, -8, 0, -21, 0, -79, 0, 79, 0, 21, 0, 8, 0, 2] / 128
 
-Импульсная характеристика уже проверена в `test_rx_quadrature.py`. Она нечётно-симметрична относительно центра, линейная фаза, group delay = 7 decimated I/Q pairs. I branch задерживается на те же 7 пар.
+As an isolated quadrature block with ideal equal-amplitude I and Q input, it gives approximately:
 
-Эквивалентный частотный отклик:
-
-    H(e^jw) = sum(h[k] * exp(-j*w*k)), k=0..14
-    D(e^jw) = exp(-j*7*w)
-
-Для идеального image-rejection Hilbert при этой полярности `H = -j*D`. У фильтра фазовая квадратичность точная за счёт симметрии; основной источник image leakage здесь — амплитуда `|H|`, отличная от 1.
-
-При равных I/Q amplitudes отношение wanted/image в линейном сценарии определяется:
-
-    IRR = |1 + |H|| / |1 - |H||
-
-(в dB: `20*log10(IRR)`). Фактический знак Q меняет, какая из двух ориентаций является wanted, но не отношение RMS двух ориентаций.
-
-## 2. Аналитический результат
-
-| Частота | IRR при 8000 SPS | IRR при 7812.5 SPS |
+| Frequency | At 8000 SPS | At 7812.5 SPS |
 |---:|---:|---:|
-| 650 Hz | 43.94 dB | 47.82 dB |
-| 1000 Hz | 50.98 dB | 47.75 dB |
-| 2000 Hz | ideal null в линейной модели | 61.7 dB |
-| 2500 Hz | 53.71 dB | 49.0 dB |
-| 3000 Hz | 50.98 dB | 64.8 dB |
-| 3200 Hz | 48.11 dB | 61.1 dB |
-| 3400 Hz | **35.77 dB** | **27.36 dB** |
+| 650 Hz | 43.94 dB analytic | 47.82 dB analytic |
+| 3400 Hz | 35.77 dB analytic | 27.36 dB analytic |
 
-Значение `ideal null` — математический ноль в точной линейной модели; в целочисленном time-domain тесте результат ограничивается округлением/квантованием.
+The time-domain isolated test gives 35.19 dB at 3400 Hz / 8000 SPS and 27.13 dB at 3400 Hz / 7812.5 SPS. These numbers are valid for the isolated FIR, but they do not include the upstream I midpoint interpolation.
 
-**Ключевой вывод:** минимальное подавление в диапазоне 650…3400 Hz оказывается на верхнем краю. Для номинальных 8 kSPS расчёт даёт около 35.8 dB, а не 43 dB. При действительной частоте decimated пары 7812.5 SPS верхний край ухудшается примерно до 27.4 dB.
+## 2. Why the source filter is not a flat-gain Hilbert
 
-## 3. Прямая проверка через RxQuadratureState
+In the active ADC path, neighbouring I-channel samples are averaged:
 
-Добавлен `reference/test_rx_hilbert_image_rejection.py`. Он подаёт в ту же FIR-модель:
+    I_aligned[n] = (I[n] + I[n-1]) / 2
 
-- `I = cos(2*pi*f*n/fs)`;
-- `Q = +sin(...)` и отдельно `Q = -sin(...)`;
-- amplitude 1000 counts;
-- 8192 samples, первые 256 отбрасываются как startup transient;
-- сравнивается RMS двух выходов `-I_delayed - q_hilbert`.
+The I channel sampling rate is 31,250 samples/s. For a sinusoid, this two-sample average has magnitude response:
 
-| Sample rate | 650 Hz | 3400 Hz |
-|---:|---:|---:|
-| 8000 SPS | 42.45 dB | **35.19 dB** |
-| 7812.5 SPS | 45.74 dB | **27.13 dB** |
+    A_I(f) = cos(pi*f/31250)
 
-Прямой результат близок к аналитической характеристике; небольшие расхождения объясняются округлением целых samples и конечным FFT/RMS окном. Это isolated quadrature-stage test, не полный radio test: здесь нет ADC analog aperture, CIC passband ripple, RF frontend mismatch, AGC или реальных аналоговых I/Q gain/phase errors. Эти факторы могут дополнительно изменить image rejection.
+Q does not get this averaging. Before the Hilbert stage, the Q/I amplitude ratio is therefore approximately:
 
-## 4. Что это означает для переноса
+    A_Q(f) / A_I(f) = 1 / cos(pi*f/31250)
 
-1. Не записывать 43 dB over 650…3400 Hz как подтверждённую характеристику порта.
-2. Для ESP32 сохранить текущую FIR как **baseline**: она симметрична, даёт ровно 7 пар задержки и хорошо подавляет образ в центральной части полосы.
-3. Отдельно оценить вариант с узкой полосой до 3.0…3.2 kHz либо с более длинным/оптимизированным Hilbert FIR, если 43 dB на всём диапазоне является обязательным требованием.
-4. Любой новый Hilbert вариант проверять не только по амплитуде/фазе, но и по image rejection после полного CIC и при реальной sample rate 7812.5 SPS.
-5. Не менять исходные коэффициенты до сравнения нескольких вариантов и фиксации критериев качества.
+This ratio grows from about 1.0028 at 650 Hz to about 1.0620 at 3400 Hz. The CIC applies the same magnitude response to both branches. The original Hilbert FIR's amplitude roll-off therefore partly counteracts the upstream mismatch.
 
-## 5. Исходник
+This also explains why the flat unity-magnitude candidates in 20_RX_HILBERT_CANDIDATES.md are not drop-in replacements: they remove the compensation which the original path relies on.
 
-- Активная Hilbert формула, комментарий 43 dB и 7-sample I delay:
-  https://github.com/threeme3/usdx/blob/bf8acd31b8/usdx.ino#L2770-L2788
-- Reference impulse model:
-  https://github.com/Fmulder007/uSDX-ESP32/blob/main/temp/reference/rx_quadrature.py
+## 3. End-to-end steady-state test
+
+The correct comparison is made after:
+
+1. ADC MUX/read-previous model and I midpoint averaging;
+2. the original eight-phase CIC;
+3. the candidate Hilbert and its matching I delay.
+
+The model uses a 62.5 kHz timer event rate, centered sine inputs with amplitude 511, att2=2, two opposite Q polarities, and compares output RMS after warm-up. Sample rate after CIC is 7812.5 I/Q pairs/s.
+
+| Audio frequency | Source 15 taps | Flat 19 taps | Flat 23 taps |
+|---:|---:|---:|---:|
+| 650 Hz | 50.55 dB | 45.45 dB | 50.71 dB |
+| 1000 Hz | 57.95 dB | 58.36 dB | 48.05 dB |
+| 1500 Hz | 46.56 dB | 51.50 dB | 44.43 dB |
+| 2000 Hz | 39.79 dB | 37.10 dB | 41.16 dB |
+| 2500 Hz | 38.02 dB | 36.29 dB | 36.67 dB |
+| 2750 Hz | 38.63 dB | 32.76 dB | 34.01 dB |
+| 3000 Hz | 32.57 dB | 34.28 dB | 32.70 dB |
+| 3200 Hz | 31.17 dB | 31.18 dB | 31.82 dB |
+| 3400 Hz | 37.37 dB | 31.76 dB | 30.96 dB |
+
+A wider sweep in 50 Hz steps over 650…3400 Hz found:
+- original source chain: minimum about 30.67 dB near 3150 Hz;
+- flat 19-tap candidate: local dips around 3200…3400 Hz;
+- flat 23-tap candidate: no better as a general drop-in option.
+
+**Interpretation:** this steady-state ideal model does not reproduce 43 dB uniformly across the complete band. However, it also shows that the isolated-Hilbert calculation was incomplete. Do not conclude the original author's measurement is wrong until exact AVR timing, analog acquisition, gain/phase mismatch, and the precise image-rejection setup are reproduced.
+
+## 4. Correct design target
+
+The replacement filter must compensate the I midpoint response, not flatten it. The desired Hilbert magnitude is approximately:
+
+    |H_target(f)| = cos(pi*f/31250)
+
+with the required quadrature phase and original polarity. Two Q15 candidates fitted to this target and tested through the full steady-state chain are documented in 21_RX_HILBERT_CIC_COMPENSATION.md:
+
+- 23 taps: minimum about 46.29 dB in the 50 Hz frequency sweep;
+- 27 taps: minimum about 53.20 dB in the same sweep.
+
+The original 15-tap coefficients and all flat candidates are retained as comparison baselines. No production filter has been replaced.
