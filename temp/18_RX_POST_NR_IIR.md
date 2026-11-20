@@ -154,7 +154,7 @@ CW branch использует другую пару biquad секций, зат
 
 Добавлены audit_ssb_iir_intermediates() в reference/rx_numeric_audit.py; теперь он проверяет не только суммы, но и отдельные произведения до сложения. Два теста в test_rx_numeric_audit.py покрывают overrange и low-amplitude control vectors. Это range warning по wide trajectory, не утверждение о точном AVR результате.
 
-Для проверки целевого компилятора подготовлены reference/avr_iir_probe.c и avr_iir_probe.md. Probe прогоняет source-style 16-bit и int32 wide реализации всех трёх SSB-фильтров на том же 2.5-kHz vector и сохраняет checksums/final states. Компиляция и выполнение AVR-GCC ещё не проведены: AVR toolchain отсутствует в исследовательской среде.
+Для проверки целевого компилятора подготовлены reference/avr_iir_probe.cpp и avr_iir_probe.md. Probe прогоняет source-style 16-bit и int32 wide реализации всех трёх SSB-фильтров на том же 2.5-kHz vector и сохраняет checksums/final states. Компиляция и выполнение AVR-GCC ещё не проведены: AVR toolchain отсутствует в исследовательской среде.
 
 ## 7. Исполняемые IIR reference model
 
