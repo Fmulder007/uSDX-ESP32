@@ -174,3 +174,17 @@
 - Для int16 input history worst-case Q15 accumulator bound: 2,026,407,735 (19 taps), 2,095,678,230 (23 taps); обе границы ниже signed int32 max. При default att2=2 bounds становятся253,304,832 и261,963,776.
 - Добавлены temp/reference/rx_hilbert_candidates.py, test_rx_hilbert_candidates.py и temp/20_RX_HILBERT_CANDIDATES.md.
 - Это исследовательские alternatives; активная 15-tap source model не изменена. Следующий этап — прогнать candidates после полного CIC, затем сравнить SSB/USB/LSB signal behaviour and ESP32 execution cost.
+
+
+### Полный RX Hilbert пересмотрен с учётом I midpoint average — 2026-11-20
+- Важная поправка: изолированный Hilbert FIR не является image-rejection path исходника. До CIC исходная ADC-модель усредняет соседние I samples, но не усредняет Q.
+- Для I sample rate 31.25 kSPS midpoint average имеет amplitude response cos(pi*f/31250). Поэтому Q/I gain ratio перед Hilbert примерно sec(pi*f/31250), растущий от1.0028 до1.0620 в полосе650…3400Hz.
+- Это объясняет, почему flat-gain Remez Hilbert candidates, хорошо выглядевшие в isolated test, ухудшают image rejection в полной цепочке на части частот. Документ temp/20_RX_HILBERT_CANDIDATES.md исправлен: такие кандидаты оставлены как FIR лабораторные варианты, не drop-in.
+- Full steady-state test: RxAdcInputState → RxCicState → Hilbert candidate, amplitude511, att2=2, Q polarity ±, 2048 output pairs after warm-up. Source chain sweep every50Hz found min30.67dB near3150Hz. Flat19/23 chains showed lower rejection at some frequencies.
+- Спроектированы compensation-target filters: Q Hilbert magnitude approximates cos(pi*f/31250), preserving desired quadrature phase and source polarity. Coefficients are Type-III antisymmetric least-squares fit, Q15 quantized.
+- Compensated23 taps, delay11 pairs: full chain IRR71.43dB @650Hz, 65.17dB @2kHz, 46.29dB @3400Hz; minimum over 50Hz sweep46.29dB at3400Hz.
+- Compensated27 taps, delay13 pairs: 69.00dB @650Hz, 66.04dB @2kHz, 53.22dB @3400Hz; sweep minimum53.20dB at3400Hz.
+- Q15 magnitude fit error to cos compensation target over650…3400Hz: max absolute0.085dB for23 taps and0.037dB for27 taps.
+- Accumulator exact signed-int16 history bounds: 2,000,128,200 (23 taps) and2,059,044,165 (27 taps), both fit signed int32. For expected post-att2 ranges ±4096 these are250,019,840 and257,384,448.
+- Added rx_hilbert_cic_compensation.py and test_rx_hilbert_cic_compensation.py; five local focused checks passed: full-chain IRR at three frequencies for both candidates, I delay, target magnitude fit, accumulator bounds.
+- Recommendation for the next experiment: use23 taps as the low-cost candidate, retain27 as higher-margin alternative. Do not replace active source coefficients until ADC aperture/startup, analog mismatch, SSB audio response and ESP32 compute cost are checked.
