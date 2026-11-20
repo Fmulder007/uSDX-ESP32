@@ -94,7 +94,7 @@ att2 по умолчанию равен 2, но это не жёсткий ми�
 
 - reference/avr_hilbert_probe.c — source-style выражение с pragma Ofast и отдельный int32 wide вариант;
 - reference/avr_hilbert_probe.md — команды сборки, извлечения disassembly и точки чтения результатов.
-- reference/avr_iir_probe.c и avr_iir_probe.md — source-vs-wide сравнение всех SSB IIR 1..3 на том же fixed input vector.
+- reference/avr_iir_probe.cpp и avr_iir_probe.md — source-vs-wide сравнение всех SSB IIR 1..3 на том же fixed input vector.
 
 Probe намеренно требует AVR target и проверяет sizeof(int) через INT_MAX. Его результат пока не получен: в текущем исследовательском окружении AVR-GCC отсутствует. Инструкция сохранена, чтобы следующий запуск не требовал повторно восстанавливать входной вектор и формулу.
 
