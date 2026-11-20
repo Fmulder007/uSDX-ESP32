@@ -33,9 +33,9 @@ class TestRxAdcInput(unittest.TestCase):
 
     def test_signed_division_truncates_toward_zero(self):
         state = RxAdcInputState(startup_adc_register=0)
-        for _ in range(2):
-            state.push_tick(0, 0)
-        channel, sample = state.push_tick(-3, 0)
+        state.push_tick(0, 0)     # phase 0: start Q conversion
+        state.push_tick(-3, 0)    # phase 1: start I conversion with sample -3
+        channel, sample = state.push_tick(0, 0)  # phase 2: read previous I
         self.assertEqual(channel, "I")
         self.assertEqual(sample, -1)
 
