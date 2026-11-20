@@ -111,6 +111,7 @@ All fit signed int32.
 
 - reference/rx_hilbert_cic_compensation.py — два compensation coefficient sets, Q15 response target и accumulator bound.
 - reference/test_rx_hilbert_cic_compensation.py — full-chain image rejection, delay, coefficient target and accumulator safety tests.
+- reference/rx_hilbert_cic_sweep.py — воспроизводимый sweep 650…3400 Hz с шагом50 Hz для source15/comp23/comp27; выводит CSV и minimum каждого варианта.
 
 **Предварительная рекомендация для дальнейшего исследования:** взять 23 taps как основной кандидат на следующий этап — он обеспечивает около 46.3 dB minimum в текущей full-chain ideal model при меньшей вычислительной нагрузке. 27 taps сохранить как вариант с более высоким запасом.
 
