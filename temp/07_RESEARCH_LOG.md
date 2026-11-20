@@ -149,3 +149,10 @@
 - Probe содержит 25-sample periodic table для 2.5 kHz / amplitude512 / fs7812.5Hz; запускает по 5000 samples для каждого SSB filter 1..3.
 - Сравнивает source-style int16 state/expressions под pragma GCC optimize("Ofast") и explicit int32 wide model; выводит volatile checksum и конечные state arrays.
 - Probe не собирался: AVR-GCC в текущем исследовательском окружении отсутствует. На будущее требуется сохранить `avr-gcc --version`, flags, disassembly и значения всех checksum/state.
+
+
+### NR delta range audit и AVR probe — 2026-11-20
+- Проверена операция in-ea1 до деления в EA macro. На synthetic full-range vector [-32767,+32767] delta для NR=8 достигает33022, для NR=1 —65534; это выше signed int16.
+- Добавлена функция audit_nr_deltas() и тест для NR1/NR8 в temp/reference/rx_numeric_audit.py и test_rx_numeric_audit.py.
+- Добавлены temp/reference/avr_nr_probe.cpp и avr_nr_probe.md. Probe построен как C++ translation unit, без Ofast pragma: process_nr() находится до pragma в исходном sketch.
+- Это worst-case boundary test, не утверждение о типовом signal level. Wide NR reference остаётся математическим baseline; фактическое AVR-GCC поведение необходимо получить на целевом toolchain.
