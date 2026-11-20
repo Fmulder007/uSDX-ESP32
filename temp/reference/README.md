@@ -9,7 +9,7 @@
 - `test_rx_adc_input.py` — тесты логического канального порядка, начального регистра и интерполяции.
 - `test_rx_adc_timing.py` — тесты задержки первой конверсии, двух стартовых чтений старого ADC register, первого Q результата в I slot и sample-and-hold offsets.
 - `rx_numeric_audit.py` — диапазоны промежуточных значений Hilbert и кандидаты проверки signed int16.
-- `test_rx_numeric_audit.py` — CIC DC gain/границы и воспроизводимый full-scale 650 Hz Hilbert overrange test.
+- `test_rx_numeric_audit.py` — CIC DC gain/границы и воспроизводимый full-scale 650 Hz Hilbert overrange test. Также проверяются SSB IIR prefilter/feedback intermediate width на фиксированных синусоидальных vectors.
 - `rx_nr.py` — integer EMA smoother, используемый в slow_dsp() при NR=1…8.
 - `test_rx_nr.py` — тесты passthrough, EMA step response, truncation deadband и persistent NR state.
 - `rx_iir.py` — wide-intermediate SSB filters 1..3 recurrence model; не AVR bit-exact и не CW.
