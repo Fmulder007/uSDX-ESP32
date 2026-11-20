@@ -1,4 +1,4 @@
-# RX CIC и Hilbert: диапазоны, коэффициентный gain и 16-bit риск
+# RX numeric range: CIC, Hilbert и SSB IIR intermediate width
 
 **Источник:** PE1NNZ uSDX, commit bf8acd31b8a2506c4e1d203dfb283feecae947e1.
 **Статус:** диапазон активной CIC-цепочки доказан для 10-bit ADC domain; обнаружен воспроизводимый выход промежуточной Hilbert-арифметики за signed int16. Фактический результат AVR-GCC при signed overflow ещё не снят.
@@ -97,7 +97,11 @@ att2 по умолчанию равен 2, но это не жёсткий ми�
 
 Probe намеренно требует AVR target и проверяет sizeof(int) через INT_MAX. Его результат пока не получен: в текущем исследовательском окружении AVR-GCC отсутствует. Инструкция сохранена, чтобы следующий запуск не требовал повторно восстанавливать входной вектор и формулу.
 
-## 7. Исходные участки
+## 7. SSB IIR: отдельный reachable overrange
+
+Диапазонный аудит SSB IIR вынесен в подробный разбор [18_RX_POST_NR_IIR.md](18_RX_POST_NR_IIR.md). Для входа filt_var() — синус 2,5 kHz с амплитудой 512 при fs=7812,5 Hz — общая prefilter sum достигает 37315 во всех трёх SSB-фильтрах. У filt=1 дополнительная stage-2 feedback sum достигает 43357. Использована wide Python recurrence; AVR result after signed overflow remains unknown. Это показывает, что numeric compatibility issue затрагивает не только Hilbert, но и активный SSB IIR.
+
+## 8. Исходные участки
 
 - R=4 и комментарий 12 dB: https://github.com/threeme3/usdx/blob/bf8acd31b8/usdx.ino#L2701-L2716
 - Активная CIC-цепочка и M_SR=1: https://github.com/threeme3/usdx/blob/bf8acd31b8/usdx.ino#L2825-L2838
