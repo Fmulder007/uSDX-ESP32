@@ -165,3 +165,12 @@
 - Независимая time-domain проверка через RxQuadratureState с I=cos, Q=±sin, amplitude1000, 8192 samples и skip первых256 дала: 8000 SPS — 42.45/35.19 dB на 650/3400 Hz; 7812.5 SPS — 45.74/27.13 dB.
 - Вывод ограничен isolated Hilbert/I-delay stage. В полный radio path входят CIC passband, analog I/Q mismatch, ADC aperture и прочее; они здесь не смоделированы. Но утверждение source comment о 43 dB на всём диапазоне 650…3400 Hz не получается из коэффициентов этого FIR у верхнего края.
 - Добавлены temp/19_RX_HILBERT_IMAGE_REJECTION.md и test_rx_hilbert_image_rejection.py (три проверки). Выбор нового FIR/полосы не сделан; текущие coefficients оставлены как baseline.
+
+
+### Hilbert FIR alternatives: 19/23-tap Q15 — 2026-11-20
+- Подготовлены equiripple Remez Type-III candidates для passband 650…3400 Hz при 7812.5 SPS; source polarity сохранена, coefficients quantized symmetrically to Q15.
+- 19 taps: group delay9, 9 antisymmetric pairs, min analytic IRR47.80 dB; time-domain test IRR48.57 dB at650Hz and47.11 dB at3400Hz.
+- 23 taps: group delay11, 11 pairs, min analytic IRR55.64 dB; time-domain test57.42 dB/54.20 dB at650/3400Hz.
+- Для int16 input history worst-case Q15 accumulator bound: 2,026,407,735 (19 taps), 2,095,678,230 (23 taps); обе границы ниже signed int32 max. При default att2=2 bounds становятся253,304,832 и261,963,776.
+- Добавлены temp/reference/rx_hilbert_candidates.py, test_rx_hilbert_candidates.py и temp/20_RX_HILBERT_CANDIDATES.md.
+- Это исследовательские alternatives; активная 15-tap source model не изменена. Следующий этап — прогнать candidates после полного CIC, затем сравнить SSB/USB/LSB signal behaviour and ESP32 execution cost.
