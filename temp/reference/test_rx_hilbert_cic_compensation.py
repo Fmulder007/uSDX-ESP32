@@ -7,6 +7,9 @@ from rx_adc_input import RxAdcInputState
 from rx_cic import RxCicState
 from rx_hilbert_candidates import RxHilbertCandidateState
 from rx_hilbert_cic_compensation import (
+    COMPENSATED_HILBERT_17_MINIMAX_Q15,
+    COMPENSATED_HILBERT_19_MINIMAX_Q15,
+    COMPENSATED_HILBERT_21_MINIMAX_Q15,
     COMPENSATED_HILBERT_23_Q15,
     COMPENSATED_HILBERT_27_Q15,
     INT32_MAX,
@@ -81,6 +84,8 @@ class TestCicCompensatedHilbert(unittest.TestCase):
 
     def test_delay_matches_candidate_group_delay(self):
         for taps, delay in (
+            (COMPENSATED_HILBERT_19_MINIMAX_Q15, 9),
+            (COMPENSATED_HILBERT_21_MINIMAX_Q15, 10),
             (COMPENSATED_HILBERT_23_Q15, 11),
             (COMPENSATED_HILBERT_27_Q15, 13),
         ):
@@ -95,6 +100,8 @@ class TestCicCompensatedHilbert(unittest.TestCase):
 
     def test_q15_accumulator_bounds_fit_signed_int32(self):
         expected = (
+            (COMPENSATED_HILBERT_19_MINIMAX_Q15, 250888192, 1003552768, 2007074910),
+            (COMPENSATED_HILBERT_21_MINIMAX_Q15, 245858304, 983433216, 1966836420),
             (COMPENSATED_HILBERT_23_Q15, 250019840, 1000079360, 2000128200),
             (COMPENSATED_HILBERT_27_Q15, 257384448, 1029537792, 2059044165),
         )
@@ -115,6 +122,9 @@ class TestCicCompensatedHilbert(unittest.TestCase):
 
     def test_q15_fir_tracks_midpoint_compensation_target(self):
         for taps, tolerance_db in (
+            (COMPENSATED_HILBERT_17_MINIMAX_Q15, 0.14),
+            (COMPENSATED_HILBERT_19_MINIMAX_Q15, 0.08),
+            (COMPENSATED_HILBERT_21_MINIMAX_Q15, 0.06),
             (COMPENSATED_HILBERT_23_Q15, 0.09),
             (COMPENSATED_HILBERT_27_Q15, 0.04),
         ):
@@ -123,6 +133,45 @@ class TestCicCompensatedHilbert(unittest.TestCase):
                 target = compensation_target_magnitude(frequency)
                 error_db = 20.0 * math.log10(actual / target)
                 self.assertLessEqual(abs(error_db), tolerance_db)
+
+
+    def test_19_tap_minimax_is_smallest_passing_candidate(self):
+        self.assertGreater(
+            full_chain_image_rejection_db(650, COMPENSATED_HILBERT_19_MINIMAX_Q15),
+            47.0,
+        )
+        self.assertGreater(
+            full_chain_image_rejection_db(2000, COMPENSATED_HILBERT_19_MINIMAX_Q15),
+            48.0,
+        )
+        self.assertGreater(
+            full_chain_image_rejection_db(3400, COMPENSATED_HILBERT_19_MINIMAX_Q15),
+            47.0,
+        )
+
+    def test_21_tap_minimax_adds_more_margin(self):
+        self.assertGreater(
+            full_chain_image_rejection_db(650, COMPENSATED_HILBERT_21_MINIMAX_Q15),
+            51.0,
+        )
+        self.assertGreater(
+            full_chain_image_rejection_db(2000, COMPENSATED_HILBERT_21_MINIMAX_Q15),
+            52.0,
+        )
+        self.assertGreater(
+            full_chain_image_rejection_db(3400, COMPENSATED_HILBERT_21_MINIMAX_Q15),
+            50.0,
+        )
+
+    def test_17_tap_minimax_is_not_enough_for_43db_full_band(self):
+        self.assertLess(
+            full_chain_image_rejection_db(650, COMPENSATED_HILBERT_17_MINIMAX_Q15),
+            43.0,
+        )
+        self.assertLess(
+            full_chain_image_rejection_db(3400, COMPENSATED_HILBERT_17_MINIMAX_Q15),
+            43.0,
+        )
 
 
 if __name__ == "__main__":
