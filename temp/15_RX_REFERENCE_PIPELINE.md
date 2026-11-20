@@ -36,7 +36,7 @@
        clamp [-512, 511]
             |
             v
-       baseline SSB audio sample
+       supported SSB audio sample
 
 Одна выходная пара формируется после полного восьмифазного цикла исходного RX расписания.
 
