@@ -8,6 +8,8 @@
 - `rx_adc_timing.py` — цикл-тактовая модель ADC startup: первая 25-тактовая конверсия, обычные 13-тактовые конверсии, sample-and-hold timestamps и момент обновления ADC data register.
 - `test_rx_adc_input.py` — тесты логического канального порядка, начального регистра и интерполяции.
 - `test_rx_adc_timing.py` — тесты задержки первой конверсии, двух стартовых чтений старого ADC register, первого Q результата в I slot и sample-and-hold offsets.
+- `rx_numeric_audit.py` — диапазоны промежуточных значений Hilbert и кандидаты проверки signed int16.
+- `test_rx_numeric_audit.py` — CIC DC gain/границы и воспроизводимый full-scale 650 Hz Hilbert overrange test.
 - `rx_cic.py` — активный восьмифазный RX CIC из NEW_RX=1; выдаёт сырые пары до att2.
 - `test_rx_cic.py` — проверка расписания функций против прямой каскадной формулы.
 - `rx_quadrature.py` — активный Hilbert FIR и 7-sample I delay; применяет att2.
