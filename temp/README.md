@@ -31,6 +31,7 @@
 | 09_ADC_TIMING.md | Настройка ADC, чередование I/Q, OCR timing и конвейер TX |
 | 10_DSP_INTERFACE_DRAFT.md | Черновик API DSP_RX/DSP_TX и варианты sample/block input |
 | 11_REFERENCE_TEST_PLAN.md | План эталонных тестов RX/TX и критерии сравнения |
+| [reference/](reference/) | Исполняемые host-side модели и тесты отдельных DSP-блоков |
 
 ## Как читать материалы
 
