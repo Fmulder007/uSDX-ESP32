@@ -136,3 +136,66 @@ TIMER2_COMPA_vect выполняет func_ptr().
 - rx_reset_full() — полный сброс всех RX фильтров, если он будет нужен как отдельный режим.
 
 Не подменять source-compatible resume полным reset без отдельного сравнения переходного процесса.
+
+## 9. Расширенный перечень DSP state
+
+Ниже перечислено состояние, которое должно быть явно найдено и назначено владельцу в новом ядре. Это не означает, что все режимные ветви включены одновременно.
+
+### RX — CIC и временная организация
+
+| Состояние | Назначение |
+|---|---|
+| rx_state, func_ptr | фаза расписания ISR |
+| i_s0za1, i_s0zb0, i_s0zb1 | история первой decimate-by-2 ступени I |
+| i_s1za1, i_s1zb0, i_s1zb1 | история второй ступени I |
+| q_s0za1, q_s0zb0, q_s0zb1 | история первой ступени Q |
+| q_s1za1, q_s1zb0, q_s1zb1 | история второй ступени Q |
+| q_ac2 | последний подготовленный Q результат |
+| prev_adc | предыдущий I ADC результат для midpoint interpolation |
+
+### RX — квадратурная обработка и аудиовыход
+
+| Состояние | Назначение |
+|---|---|
+| v[14] внутри process() | история Q для Hilbert |
+| v[7] внутри process() | задержка I для совмещения с Q Hilbert |
+| qh | текущая Hilbert quadrature result |
+| ac3 | предыдущий sample на входе выходной Comb-секции |
+| ozd1, ozd2 | история Comb-дифференциаторов |
+| ocomb | промежуточный результат для интеграторной части |
+| ozi1, ozi2 | интеграторные состояния выходного interpolator |
+| tc | защита от повторного вложения process() |
+
+### RX — постобработка
+
+| Состояние | Назначение |
+|---|---|
+| gain | fast AGC gain state |
+| centiGain, decayCount, small | alternative AGC state, используемый если включён соответствующий режим |
+| ea1 | exponential average state NR |
+| dc в AM branch | DC removal state AM detector |
+| zi в FM branch | предыдущий I value FM detector |
+| za1, za2, zb*, zc* в filt_var() | IIR filter delay/feedback state |
+| zz1, zz2 в filt_var() | состояние SSB high-pass section |
+| absavg256, absavg256cnt | статистика уровня |
+
+### TX SSB
+
+| Состояние | Назначение |
+|---|---|
+| dc, z1 внутри ssb() | mic DC removal и LPF state |
+| v[16] внутри ssb() | микрофонная история для Hilbert |
+| prev_phase внутри ssb() | предыдущая фаза |
+| _adc | конвейерный усреднённый микрофонный sample |
+| amp | рассчитанная амплитуда |
+| lut[256] | amplitude-to-PWM lookup table |
+| drive, vox_thresh | runtime параметры микрофонной чувствительности/усиления |
+| quad | только для опционального QUAD пути |
+
+### Параметры конфигурации — не фильтровое состояние
+
+К этой группе относятся mode, filt, agc, nr, att2, volume, drive, MAX_DP и параметры аппаратного режима. Их нужно передавать в DSP через конфигурацию, а не маскировать как глобальные переменные внутри математических функций.
+
+В новом коде желательно иметь отдельные структуры RxDspState, TxDspState, AudioOutState и DspConfig. Конкретную раскладку полей утвердить после reference harness.
+
+Источники: [RX state and processing](https://github.com/threeme3/usdx/blob/bf8acd31b8/usdx.ino#L2418-L2430), [slow_dsp/AGC/NR](https://github.com/threeme3/usdx/blob/bf8acd31b8/usdx.ino#L2420-L2665), [active CIC and process](https://github.com/threeme3/usdx/blob/bf8acd31b8/usdx.ino#L2741-L2880), [TX SSB](https://github.com/threeme3/usdx/blob/bf8acd31b8/usdx.ino#L1920-L2078), [IIR filters](https://github.com/threeme3/usdx/blob/bf8acd31b8/usdx_filter.h#L45-L135).
