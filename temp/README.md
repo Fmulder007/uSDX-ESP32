@@ -43,7 +43,7 @@
 | 21_RX_HILBERT_CIC_COMPENSATION.md | 23/27-tap Q15 Hilbert, компенсирующие I midpoint average; тесты в полном RX steady-state тракте |
 | reference/rx_nr.py и rx_iir.py | Отдельные NR и SSB IIR reference models с тестами |
 | reference/avr_hilbert_probe.cpp / avr_iir_probe.cpp / avr_nr_probe.cpp | AVR-GCC диагностические probes для Hilbert, NR и SSB IIR арифметики |
-| reference/rx_hilbert_candidates.py и rx_hilbert_cic_compensation.py | Плоские и CIC-компенсированные Q15 Hilbert FIR candidates; исходный фильтр не заменён |
+| reference/rx_hilbert_candidates.py и rx_hilbert_cic_compensation.py и rx_hilbert_cic_sweep.py | Плоские и CIC-компенсированные Q15 Hilbert FIR candidates; исходный фильтр не заменён |
 | reference/ | CIC, Hilbert/I delay, частичный RX pipeline и SSB post-processing модели с тестами |
 
 ## Как читать материалы
