@@ -194,3 +194,13 @@
 - Добавлен temp/reference/rx_hilbert_cic_sweep.py. Скрипт повторяет 650…3400Hz sweep с шагом50Hz для исходного 15-tap и CIC-compensated 23/27-tap вариантов.
 - Внутри каждого frequency point моделируются оба Q polarity, ADC input + I midpoint, original 8-phase CIC, Hilbert и matching I delay. Скрипт печатает CSV и минимальный IRR/частоту каждого варианта.
 - Это steady-state ideal chain; physical ADC aperture, settling, source startup and analog mismatch remain outside the model.
+
+
+### Compact minimax Hilbert follow-up — 2026-11-20
+- После LS23/27 design был проверен minimax relative-error fit для17/19/21 taps к compensation target cos(pi*f/31250).
+- Full-chain 50-Hz sweep результаты: 17 taps minimum42.46dB @800Hz (не проходит43dB); 19 taps minimum47.69dB @650Hz; 21 taps minimum50.31dB @1350Hz; retained LS23 minimum46.29dB @3400Hz; retained LS27 minimum53.20dB @3400Hz. Source15 baseline minimum30.67dB @3150Hz.
+- Time-domain check 19 minimax: 47.70/48.67/48.16dB at650/2000/3400Hz. 21 minimax:51.80/52.70/50.87dB.
+- Group delay: 19 taps=9 pairs (+2 samples vs source7); 21 taps=10 pairs (+3); 23 LS=11; 27 LS=13.
+- Q15 magnitude error to compensation target: max abs0.068dB (19),0.050dB (21). Full-int16 accumulator exact endpoint-difference bounds:2,007,074,910 (19),1,966,836,420 (21); both fit signed int32.
+- Updated rx_hilbert_cic_compensation.py with minimax17/19/21 sets; extended test module and repeatable rx_hilbert_cic_sweep.py to cover source15 + all candidates.
+- Preliminary selection is now 19 taps as the lowest-cost candidate meeting43dB; 21 taps is the higher-margin option. Active source coefficients remain unchanged.
