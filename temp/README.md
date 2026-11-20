@@ -36,6 +36,7 @@
 | 14_RX_SSB_POST.md | Базовая SSB-ветка slow_dsp: fast AGC, volume и clipping |
 | 15_RX_REFERENCE_PIPELINE.md | Состав, интерфейс, границы и запуск частичного RX reference pipeline |
 | 16_RX_ADC_STARTUP_TIMING.md | Первая 25-тактовая ADC-конверсия, startup I/Q сдвиг и цикл-тактовая модель |
+| 17_RX_NUMERIC_RANGE.md | Диапазоны CIC, gain R=4, Hilbert int16 overrange и план проверки AVR arithmetic |
 | reference/ | CIC, Hilbert/I delay, частичный RX pipeline и SSB post-processing модели с тестами |
 
 ## Как читать материалы
