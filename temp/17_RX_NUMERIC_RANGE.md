@@ -99,7 +99,7 @@ Probe намеренно требует AVR target и проверяет sizeof(
 
 ## 7. SSB IIR: отдельный reachable overrange
 
-Диапазонный аудит SSB IIR вынесен в подробный разбор [18_RX_POST_NR_IIR.md](18_RX_POST_NR_IIR.md). Для входа filt_var() — синус 2,5 kHz с амплитудой 512 при fs=7812,5 Hz — общая prefilter sum достигает 37315 во всех трёх SSB-фильтрах. У filt=1 дополнительная stage-2 feedback sum достигает 43357. Использована wide Python recurrence; AVR result after signed overflow remains unknown. Это показывает, что numeric compatibility issue затрагивает не только Hilbert, но и активный SSB IIR.
+Диапазонный аудит SSB IIR вынесен в подробный разбор [18_RX_POST_NR_IIR.md](18_RX_POST_NR_IIR.md). Для входа filt_var() — синус 2,5 kHz с амплитудой 512 при fs=7812,5 Hz — общая prefilter sum достигает 37315 во всех трёх SSB-фильтрах. У filt=1 отдельное умножение 18*zc1 достигает 46980, а stage-2 feedback sum — 43357. Использована wide Python recurrence; AVR result after signed overflow remains unknown. Это показывает, что numeric compatibility issue затрагивает не только Hilbert, но и активный SSB IIR.
 
 ## 8. Исходные участки
 
