@@ -23,6 +23,7 @@
 - `test_rx_quadrature.py` — импульсная характеристика, задержка I и знак SSB-суммы.
 - `test_rx_hilbert_image_rejection.py` — сравнение RMS двух квадратурных orientations на 650 и 3400 Hz при 8 kSPS и реальных 7812.5 SPS.
 - `rx_hilbert_candidates.py` / `test_rx_hilbert_candidates.py` — experimental 19/23-tap Q15 Hilbert FIRs, group-delay and image-rejection tests; baseline coefficients unchanged.
+- `rx_hilbert_cic_compensation.py` / `test_rx_hilbert_cic_compensation.py` — 23/27-tap Q15 FIRs fitted to the I-midpoint amplitude compensation and tested through ADC input + CIC + Hilbert.
 - `rx_chain.py` — объединяет CIC и quadrature в частичный RX pipeline.
 - `test_rx_chain.py` — проверка стыка и однократного применения att2.
 - `rx_ssb_chain.py` — объединяет CIC, Hilbert/I-delay и базовый SSB post-processing.
@@ -43,7 +44,7 @@
 
 ## Ограничение текущей модели
 
-Частичный сквозной RX SSB pipeline с ADC MUX/read-previous, I midpoint interpolation, CIC, Hilbert/I-delay, AGC/volume, optional NR и SSB IIR 1..3 соединён в rx_ssb_adc_chain.py. Параметры nr=0..8 и filt=0..3 передаются через цепочку; defaults nr=0/filt=0 сохраняют прежнее поведение. Пока не моделируются:
+Частичный сквозной RX SSB pipeline с ADC MUX/read-previous, I midpoint interpolation, CIC, Hilbert/I-delay, AGC/volume, optional NR и SSB IIR 1..3 соединён в rx_ssb_adc_chain.py. Отдельный image-rejection harness также прогоняет альтернативный Hilbert через ADC mux/input model → CIC → quadrature. Параметры nr=0..8 и filt=0..3 передаются через цепочку; defaults nr=0/filt=0 сохраняют прежнее поведение. Пока не моделируются:
 - точный sample-and-hold aperture и acquisition/settling time внутри conversion;
 - startup 25-cycle ADC conversion timing внутри полной event-level chain (есть отдельный rx_adc_timing.py);
 - фактическое AVR-GCC поведение signed-overflow в Hilbert/IIR/NR; rx_quadrature.py и rx_iir.py остаются wide-intermediate baselines;
