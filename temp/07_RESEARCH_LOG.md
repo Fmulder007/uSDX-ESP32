@@ -70,3 +70,9 @@
 - Добавлен 14-value Q history и 7-value I delay.
 - Unit tests проверяют 15-точечную impulse response: [-2,0,-8,0,-21,0,-79,0,79,0,21,0,8,0,2], задержку I ровно на 7 I/Q pairs и знак SSB audio input.
 - Модель возвращает также текущие undelayed I/Q значения для AM/FM ветвей; slow_dsp пока не входит в неё.
+
+### Соединение RX CIC и Hilbert reference blocks — 2026-11-20
+- Граница блоков уточнена: RxCicState выдаёт raw I/Q после CIC, но до att2; RxQuadratureState выполняет att2 и затем Hilbert/I delay, как исходная граница process().
+- Добавлена обёртка temp/reference/rx_chain.py, соединяющая оба блока на упорядоченном потоке I,Q,I,Q,...
+- Добавлены integration tests на частоту выдачи пары, начальное q_ac2 и однократное применение att2.
+- Это частичный RX pipeline; ADC mux/read-previous pipeline, I midpoint interpolation, slow_dsp и audio interpolator пока не реализованы.
