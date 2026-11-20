@@ -31,7 +31,7 @@
 - [ ] Установить фактическое AVR-GCC поведение signed overflow в Hilbert: full-scale 650 Hz test при att2=2 создаёт третий числитель 34915; сравнить AVR disassembly/output с wide и wrap кандидатами.
 - [x] Подготовлена отдельная reference-модель базового SSB slow_dsp (fast AGC/volume/clipping, nr=0/filt=0): temp/reference/rx_ssb_post.py.
 - [x] Выделить process_nr() в отдельную stateful EMA-модель и проверить integer deadband/state freeze: temp/reference/rx_nr.py и test_rx_nr.py.
-- [x] Восстановить SSB filt_var() equations, добавить wide recurrence и impulse/lifecycle tests: temp/reference/rx_iir.py и test_rx_iir.py. Линейная response рассчитана; AVR width audit ещё открыт. Также найден конкретный prefilter overrange 37315 и filt=1 feedback overrange 43357 на 2.5-kHz/512-count vector: см. temp/18_RX_POST_NR_IIR.md.
+- [x] Восстановить SSB filt_var() equations, добавить wide recurrence и impulse/lifecycle tests: temp/reference/rx_iir.py и test_rx_iir.py. Линейная response рассчитана; AVR width audit ещё открыт. Также найден prefilter overrange 37315, filt=1 multiplier overrange 18*zc1=46980 и feedback sum 43357 на 2.5-kHz/512-count vector: см. temp/18_RX_POST_NR_IIR.md.
 - [x] Подключить NR и SSB filt=1..3 к rx_ssb_post.py, rx_ssb_chain.py и rx_ssb_adc_chain.py; default nr=0/filt=0 unchanged, CW/AM/FM остаются unsupported.
 - [x] Соединить CIC → Hilbert/I delay → базовый SSB slow_dsp в частичный stateful pipeline: temp/reference/rx_ssb_chain.py.
 - [x] Подключить ADC mux/read-previous порядок и midpoint interpolation I к SSB chain: temp/reference/rx_ssb_adc_chain.py.
