@@ -10,6 +10,8 @@
 - `test_rx_quadrature.py` — импульсная характеристика, задержка I и знак SSB-суммы.
 - `rx_chain.py` — объединяет CIC и quadrature в частичный RX pipeline.
 - `test_rx_chain.py` — проверка стыка и однократного применения att2.
+- `rx_ssb_post.py` — базовый SSB slow_dsp post-processing: fast AGC, volume, clipping.
+- `test_rx_ssb_post.py` — тесты AGC state, signed shift, volume и clipping.
 
 ## Запуск на Windows
 
