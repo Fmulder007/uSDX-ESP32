@@ -135,3 +135,10 @@ slow_dsp(ac) вызывается один раз на выходную пару
 Восемь фазовых обработчиков и эквивалентная передаточная функция разобраны отдельно: [08_RX_CIC_PHASES.md](08_RX_CIC_PHASES.md). Настройка ADC, multiplexing и pipeline RX/TX: [09_ADC_TIMING.md](09_ADC_TIMING.md).
 
 Важное уточнение: каждая из двух decimate-by-2 ступеней использует FIR-коэффициенты [1,3,3,1]. В совокупности они дают CIC N=3, R=4. В активной реализации первая ступень сдвигает результат на один бит, вторая — нет. После CIC дополнительно применяется att2. В комментарии исходника указано 12 dB gain; прямой коэффициентный подсчёт даёт другую величину до/после att2, поэтому нормировку нужно подтвердить тестом.
+
+### Исполняемые reference-модели
+
+- [CIC schedule model](reference/rx_cic.py) и [unit tests](reference/test_rx_cic.py): активная восьмифазная последовательность.
+- [Hilbert/I-delay model](reference/rx_quadrature.py) и [unit tests](reference/test_rx_quadrature.py): точное source-expression rounding, 14-value Q history и 7-sample I delay.
+
+Эти две модели пока отдельные блоки; полный RX pipeline с ADC mux input и slow_dsp() ещё не объединён.
