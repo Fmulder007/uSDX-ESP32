@@ -62,9 +62,9 @@
 ## 5. Следующие задачи по порядку
 
 1. Завершить state inventory: назначение, момент обновления и reset/lifecycle каждой переменной.
-2. Закрыть временную модель ADC: pipeline, sample-and-hold и I/Q aperture.
-3. Разобрать и проверить масштабирование CIC, включая комментарий о 12 dB gain.
-4. Уточнить реальную ISR-to-ADSC задержку и фазу ADC prescaler, затем расширить startup model измеренными I/Q aperture и analog source acquisition/settling.
+2. Закрыть временную модель ADC: определить ISR-to-ADSC offsets, ADC prescaler phase и I/Q aperture; analog acquisition/settling — отдельным измерением.
+3. Установить фактическую AVR-GCC арифметику Hilbert на overrange vector: получить точные flags/disassembly и сравнить реальный результат с wide и wrap кандидатами.
+4. Подключить startup timing model к полному RX reference harness и подготовить фиксированные синусоидальные/двухтональные векторы с промежуточными контрольными точками.
 5. Добавить NR и IIR с явными состояниями в отдельные RX post blocks; AM/FM — отдельными ветвями.
 6. Подготовить аналогичную модель SSB TX, включая integer atan2 macro semantics, MAX_DP и ADC pipeline.
 7. Проверить и уточнить API из temp/10_DSP_INTERFACE_DRAFT.md по результатам reference harness.
