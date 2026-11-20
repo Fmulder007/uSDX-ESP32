@@ -3,13 +3,13 @@
 Run from temp/reference:
     python rx_hilbert_cic_sweep.py
 
-The script compares the original source 15-tap Hilbert with the 23- and
-27-tap CIC-compensated Q15 candidates through:
+The script compares the original source 15-tap Hilbert, compact minimax
+17/19/21-tap candidates, and retained least-squares 23/27-tap candidates through:
     ADC MUX/read-previous + I midpoint -> original CIC -> Hilbert + I delay
 
 This is an ideal steady-state model. It does not include the separate ADC
 startup timing scheduler, physical sample-and-hold aperture, analog settling,
-or real I/Q hardware mismatch.
+or real I/Q hardware mismatch. Use --q-skew-cycles to inject a synthetic Q aperture offset for sensitivity checks.
 """
 
 import argparse
