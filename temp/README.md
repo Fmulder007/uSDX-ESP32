@@ -32,6 +32,7 @@
 | 10_DSP_INTERFACE_DRAFT.md | Черновик API DSP_RX/DSP_TX и варианты sample/block input |
 | 11_REFERENCE_TEST_PLAN.md | План эталонных тестов RX/TX и критерии сравнения |
 | 12_STATE_LIFECYCLE.md | Инициализация, скрытое static-состояние и reset при RX/TX switching |
+| 13_TX_PHASE_SCALING.md | Фазовая шкала TX, MAX_DP и передача остатка фазового ограничения |
 | [reference/](reference/) | Исполняемые host-side модели и тесты отдельных DSP-блоков |
 
 ## Как читать материалы
