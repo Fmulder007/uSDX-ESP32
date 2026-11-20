@@ -4,7 +4,7 @@
  * Build for ATmega328P:
  *   avr-g++ --version
  *   avr-g++ -mmcu=atmega328p -std=gnu++11 -Os -flto -Wall -Wextra \
- *       -o avr_iir_probe.elf avr_iir_probe.cpppppp
+ *       -o avr_iir_probe.elf avr_iir_probe.cpp
  *   avr-objdump -d -S avr_iir_probe.elf > avr_iir_probe.lst
  *
  * Inspect probe_source_checksum[], probe_wide_checksum[], and the final
