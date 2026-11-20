@@ -35,9 +35,11 @@
 - [x] Подключить NR и SSB filt=1..3 к rx_ssb_post.py, rx_ssb_chain.py и rx_ssb_adc_chain.py; default nr=0/filt=0 unchanged, CW/AM/FM остаются unsupported.
 - [x] Соединить CIC → Hilbert/I delay → базовый SSB slow_dsp в частичный stateful pipeline: temp/reference/rx_ssb_chain.py.
 - [x] Подключить ADC mux/read-previous порядок и midpoint interpolation I к SSB chain: temp/reference/rx_ssb_adc_chain.py.
-- [x] Проверить линейную характеристику активного Hilbert FIR и подавление image в двух квадратурных time-domain tests: 43 dB source comment не подтверждается у 3400 Hz; при 7812.5 SPS получено около 27 dB. См. temp/19_RX_HILBERT_IMAGE_REJECTION.md.
-- [ ] Решить, достаточно ли baseline Hilbert до 3.0…3.2 kHz или нужен новый более длинный/оптимизированный FIR для 43 dB на верхнем краю.
-- [x] Подготовить и протестировать 19- и 23-tap Q15 Remez alternatives: около 47.1 dB и 54.2 dB на 3400 Hz при 7812.5 SPS; см. temp/20_RX_HILBERT_CANDIDATES.md. Выбор ещё не сделан.- [ ] Получить эталонный результат на синусе/двухтональном тесте.
+- [x] Проверить isolated Hilbert response и полный steady-state ADC midpoint → CIC → Hilbert image-rejection path: I midpoint interpolation создаёт Q/I gain mismatch; isolated 27 dB at3400Hz нельзя считать результатом полного тракта. Полный source chain дал minimum около30.67 dB near3150Hz в текущей идеальной модели. См. temp/19_RX_HILBERT_IMAGE_REJECTION.md.
+- [x] Подготовить плоские 19- и 23-tap Q15 Hilbert prototypes; полный тракт показал, что они не являются drop-in replacements: temp/20_RX_HILBERT_CANDIDATES.md.
+- [x] Подготовить 23- и 27-tap Q15 Hilbert alternatives, компенсирующие I midpoint average. Полная steady-state модель дала minimum IRR около46.29/53.20 dB в sweep 650…3400 Hz с шагом50 Hz: temp/21_RX_HILBERT_CIC_COMPENSATION.md.
+- [ ] Уточнить sample-and-hold aperture/startup и analog mismatch, затем повторить full-chain Hilbert tests с измеренными/обоснованными параметрами.
+- [ ] Получить эталонный результат на синусе/двухтональном тесте.
 - [ ] Проверить полярность USB/LSB и измерить подавление нежелательной боковой полосы.
 - [ ] Определить спецификацию выхода RX DSP: sample rate, format, latency.
 - [ ] Сверить IIR response с AVR-GCC fixed vectors и установить фактическое signed-overflow поведение; измерить transient после переключения filt, bypass/re-enable и mode. Wide range audit уже нашёл prefilter sum 37315 для всех SSB filters и feedback sum 43357 для filt=1 (temp/18_RX_POST_NR_IIR.md).
