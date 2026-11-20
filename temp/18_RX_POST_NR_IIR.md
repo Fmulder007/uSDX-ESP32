@@ -68,7 +68,20 @@ ea1 — один static int16_t внутри process_nr(), общий для в�
 
 Старые функции process_nr_old() и process_nr_old2() в текущем активном пути не вызываются. Не переносить их вместо process_nr().
 
-## 3. Исполняемая NR reference model
+## 3.1. NR delta: отдельный int16 range finding
+
+В process_nr() выражение EA(ea1, in, N) сначала вычисляет in-ea1, затем делит на N. На AVR int имеет 16 бит. Даже когда оба операнда и состояние помещаются в int16, разность может не поместиться.
+
+Диагностический wide-вектор [-32767, +32767]:
+
+| NR | Первый delta | Второй delta | Signed int16 |
+|---:|---:|---:|---|
+| 1 | -32767 | +65534 | overflow на втором sample |
+| 8 | -32767 | +33022 | overflow на втором sample |
+
+Это искусственный full-range transition, не типовой аудиосигнал. Он доказывает, что широкая NR recurrence не является универсальным bit-exact AVR oracle для всего диапазона int16. Добавлены audit_nr_deltas() и тесты в rx_numeric_audit.py/test_rx_numeric_audit.py, а также avr_nr_probe.cpp для проверки фактического AVR-GCC поведения на целевом компиляторе.
+
+## 3.2. Исполняемая NR reference model
 
 Добавлены:
 
