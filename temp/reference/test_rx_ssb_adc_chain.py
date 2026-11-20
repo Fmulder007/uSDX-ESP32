@@ -55,8 +55,8 @@ class TestRxSsbAdcReferencePipeline(unittest.TestCase):
         outputs = []
         for tick in range(256):
             result = pipeline.push_timer_event(
-                i_sample_at_tick=(tick * 37) % 1024,
-                q_sample_at_tick=(tick * 53) % 1024,
+                i_sample_at_tick=((tick * 37) % 1024) - 511,
+                q_sample_at_tick=((tick * 53) % 1024) - 511,
             )
             if result is not None:
                 outputs.append(result.audio_sample)
