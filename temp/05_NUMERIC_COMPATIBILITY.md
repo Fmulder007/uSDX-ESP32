@@ -103,11 +103,14 @@ prev_phase, phase, dp, wrap через _UA и MAX_DP требуют провер
 
 Отдельно см. [TX phase scaling и MAX_DP](13_TX_PHASE_SCALING.md): там разобраны modulo dp, точный предел для filt=0..3 и коррекция prev_phase при ограничении.
 
-## 7. RX CIC и Hilbert — результаты первого range audit
+## 7. RX numeric range audit — текущие находки
 
-Подробный расчёт и входной вектор: [17_RX_NUMERIC_RANGE.md](17_RX_NUMERIC_RANGE.md).
+Подробные расчёты и повторяемые входные векторы:
+- [17_RX_NUMERIC_RANGE.md](17_RX_NUMERIC_RANGE.md) — CIC gain, Hilbert и общая карта AVR probes.
+- [18_RX_POST_NR_IIR.md](18_RX_POST_NR_IIR.md) — NR/IIR recurrence, filter response и их intermediate ranges.
 
-- Для ADC-центрированных значений [-511, 512] активная CIC-цепочка с M_SR=1 укладывается в signed int16: raw output находится в [-16352, 16384].
-- Raw CIC DC gain равен 32; при default att2=2 gain перед Hilbert равен 8. Source smeter() нормирует через R*8=32, что согласуется с raw gain 32. Комментарий R=4, providing 12dB gain не является scaling-инструкцией для активного фильтра.
-- Для full-scale 650 Hz Q sine и default att2=2 третий числитель Hilbert достигает 34915, за пределами signed int16. Python wide model поэтому не является bit-exact AVR oracle.
-- Открыто: получить AVR-GCC disassembly/runtime vector и определить фактическое поведение signed overflow до выбора ESP32 arithmetic.
+- Активная CIC безопасна по консервативной границе для ADC domain [-511,512]: raw output [-16352,16384], DC gain 32; после default att2=2 gain 8. Комментарий R=4 о 12 dB не является коэффициентом scaling.
+- Hilbert: при full-scale 650 Hz Q tone и att2=2 третий числитель wide model достигает 34915.
+- NR: в искусственном full-range transition [-32767,+32767] разность in-ea1 достигает 33022 при NR=8 и 65534 при NR=1.
+- SSB IIR: при 2.5 kHz / amplitude512 общая prefilter sum достигает 37315; в filt=1 отдельный множитель 18*zc1 достигает 46980, а feedback sum 43357.
+- Эти превышения относятся к математическим wide trajectories. Signed overflow в C/C++ не имеет переносимой определённой семантики; нужен фактический AVR-GCC disassembly и runtime golden output. В репозитории подготовлены отдельные C++ probes для Hilbert, NR и SSB IIR, но ещё не собраны/исполнены.
