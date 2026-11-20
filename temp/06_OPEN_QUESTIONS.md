@@ -36,7 +36,8 @@
 - [x] Соединить CIC → Hilbert/I delay → базовый SSB slow_dsp в частичный stateful pipeline: temp/reference/rx_ssb_chain.py.
 - [x] Подключить ADC mux/read-previous порядок и midpoint interpolation I к SSB chain: temp/reference/rx_ssb_adc_chain.py.
 - [x] Проверить линейную характеристику активного Hilbert FIR и подавление image в двух квадратурных time-domain tests: 43 dB source comment не подтверждается у 3400 Hz; при 7812.5 SPS получено около 27 dB. См. temp/19_RX_HILBERT_IMAGE_REJECTION.md.
-- [ ] Решить, достаточно ли baseline Hilbert до 3.0…3.2 kHz или нужен новый более длинный/оптимизированный FIR для 43 dB на верхнем краю.- [ ] Получить эталонный результат на синусе/двухтональном тесте.
+- [ ] Решить, достаточно ли baseline Hilbert до 3.0…3.2 kHz или нужен новый более длинный/оптимизированный FIR для 43 dB на верхнем краю.
+- [x] Подготовить и протестировать 19- и 23-tap Q15 Remez alternatives: около 47.1 dB и 54.2 dB на 3400 Hz при 7812.5 SPS; см. temp/20_RX_HILBERT_CANDIDATES.md. Выбор ещё не сделан.- [ ] Получить эталонный результат на синусе/двухтональном тесте.
 - [ ] Проверить полярность USB/LSB и измерить подавление нежелательной боковой полосы.
 - [ ] Определить спецификацию выхода RX DSP: sample rate, format, latency.
 - [ ] Сверить IIR response с AVR-GCC fixed vectors и установить фактическое signed-overflow поведение; измерить transient после переключения filt, bypass/re-enable и mode. Wide range audit уже нашёл prefilter sum 37315 для всех SSB filters и feedback sum 43357 для filt=1 (temp/18_RX_POST_NR_IIR.md).
