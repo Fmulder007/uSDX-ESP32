@@ -2,12 +2,18 @@
 
 **Источник алгоритмов:** PE1NNZ uSDX, commit bf8acd31b8a2506c4e1d203dfb283feecae947e1.  
 **Код:** temp/reference/.  
-**Статус:** три базовые SSB стадии соединены; физический ADC input и полный RX ещё впереди.
+**Статус:** ADC mux/read-previous, I interpolation, CIC, Hilbert/I-delay и базовая SSB post-processing соединены; точная sample-and-hold aperture, NR/IIR/AM/FM и аудиовыход ещё впереди.
 
 ## 1. Что уже соединено
 
-    logical I/Q input events
+    analog I/Q values available at each Timer2 event
             |
+            v
+       RxAdcInputState
+       ADMUX next / read previous
+       I midpoint interpolation
+            |
+            | logical I/Q event
             v
        RxCicState
        NEW_RX=1
@@ -36,26 +42,28 @@
 
 | Файл | Роль |
 |---|---|
+| rx_adc_input.py | MUX для следующей конверсии, чтение предыдущей и I midpoint interpolation |
 | rx_cic.py | Восемь активных NEW_RX фаз; отдаёт raw CIC pair до att2 |
 | rx_quadrature.py | Применяет att2, вычисляет Hilbert Q, задерживает I на 7 пар |
 | rx_ssb_post.py | Базовая USB/LSB/CW постобработка, fast AGC, volume, clipping |
 | rx_chain.py | Соединяет CIC и Hilbert/I-delay |
 | rx_ssb_chain.py | Соединяет CIC, quadrature и базовый SSB post |
+| rx_ssb_adc_chain.py | Подключает ADC input adapter к доступной SSB цепочке |
 | test_*.py | Проверки отдельных блоков и границ между ними |
 
 Важная граница: att2 применяется ровно один раз, в RxQuadratureState, на той же логической границе, где исходный process() масштабирует CIC outputs перед Hilbert.
 
 ## 3. Входной формат
 
-rx_ssb_chain.py получает уже демультиплексированные события логических каналов:
+Основной вход теперь принимает rx_ssb_adc_chain.py: для каждого Timer2 event передаются analog I и Q values, доступные при старте conversion на выбранном MUX-канале.
 
-    I, Q, I, Q, I, Q, I, Q, ...
+RxAdcInputState повторяет исходный порядок:
+- I-handler выбирает ADC1/Q для следующей конверсии, затем читает предыдущий ADC0/I result;
+- Q-handler выбирает ADC0/I для следующей конверсии, затем читает предыдущий ADC1/Q result;
+- I result усредняется с предыдущим I result через truncation toward zero;
+- первая операция чтения использует настраиваемый startup_adc_register, поскольку start_rx() не запускает первую конверсию явно.
 
-Каждое событие — пара:
-- channel: "I" или "Q";
-- sample: signed ADC value после смещения и назначения канала.
-
-Модель пока не управляет физическим ADC и не повторяет ADMUX pipeline. Она также не делает исходную midpoint interpolation I. Эти операции должны быть добавлены на входной границе до CIC либо в отдельном source-compatible input adapter.
+rx_ssb_chain.py остаётся отдельной нижней обёрткой для случаев, когда логические I/Q events уже подготовлены. rx_ssb_adc_chain.py соединяет ADC input adapter с той же CIC→quadrature→post chain.
 
 ## 4. Выход
 
@@ -78,8 +86,7 @@ rx_ssb_chain.py получает уже демультиплексированн
 - USB/LSB/CW common audio path.
 
 Пока не поддерживаются:
-- ADMUX/read-previous ADC pipeline;
-- I midpoint interpolation;
+- точная analog sample-and-hold aperture, ADC acquisition/settling time и jitter внутри Timer2 event;
 - NR;
 - IIR filters;
 - AM/FM demodulators;
@@ -108,14 +115,16 @@ rx_ssb_chain.py получает уже демультиплексированн
 - Для I delay проверена задержка ровно 7 decimated I/Q pairs.
 - Для baseline AGC/volume добавлены tests, включая sign asymmetry signed right shift.
 - Для chain добавлены integration tests: число выходных samples, quadrature→post handoff и output range.
+- Для RxAdcInputState добавлены тесты MUX/read-previous канального порядка, startup ADC value и I midpoint interpolation.
+- Для rx_ssb_adc_chain добавлены интеграционные тесты от Timer2-event values до SSB audio sample.
 
 Важно: полный запуск unittest из свежего клона репозитория в исследовательской среде не был выполнен — среда не смогла разрешить github.com через DNS. Тестовые файлы сохранены в GitHub, а результаты математических проверок отдельных выражений и CIC scheduler отражены в журнале исследований.
 
 ## 8. Следующие расширения
 
-1. Добавить RxAdcInputState: ADMUX pipeline, read-previous semantics, первая conversion и channel mapping.
-2. Добавить source-compatible I midpoint interpolation.
-3. Сверить выход CIC после подключения ADC model с исходной временной фазой.
-4. После этого добавить NR и каждый IIR filter отдельно.
-5. Добавить AM/FM ветви отдельно от базовой SSB.
-6. Добавить output CIC interpolator и только после сравнения подключать ESP32 audio adapter.
+1. Уточнить sample-and-hold aperture и ADC acquisition/settling time на выбранной физической схеме ESP32.
+2. Сверить startup_adc_register/startup transient и реальную временную фазу I/Q на исходном AVR.
+3. Добавить NR и каждый IIR filter отдельно.
+4. Добавить AM/FM ветви отдельно от базовой SSB.
+5. Добавить output CIC interpolator.
+6. Только после этого сравнить полную reference chain и подключать ESP32 audio adapter.
