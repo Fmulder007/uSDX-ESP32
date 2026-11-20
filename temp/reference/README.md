@@ -16,8 +16,9 @@
 - `test_rx_ssb_chain.py` — интеграционные проверки SSB subset.
 - `rx_ssb_adc_chain.py` — подключает ADC mux/read-previous и I interpolation перед всей доступной SSB-цепочкой.
 - `test_rx_ssb_adc_chain.py` — интеграционные проверки входного ADC pipeline.
-- `rx_ssb_post.py` — базовый SSB slow_dsp post-processing: fast AGC, volume, clipping.
+- `rx_ssb_post.py` — baseline SSB post-processing: fast AGC, volume, clipping.
 - `test_rx_ssb_post.py` — тесты AGC state, signed shift, volume и clipping.
+
 
 ## Запуск на Windows
 
