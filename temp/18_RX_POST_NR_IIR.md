@@ -1,7 +1,7 @@
 # RX post-processing: NR smoother и переключаемые IIR-фильтры
 
 **Источник:** PE1NNZ uSDX snapshot bf8acd31b8a2506c4e1d203dfb283feecae947e1, usdx.ino и usdx_filter.h.
-**Статус:** source flow и NR recurrence разобраны; NR reference model добавлена. IIR точные состояния/ветви описаны, но frequency-response и численный range audit ещё не сделаны.
+**Статус:** source flow, NR recurrence и SSB IIR recurrences разобраны; NR/IIR wide reference models и focused tests добавлены. Для SSB IIR вычислена линейная transfer response и сверена sinus run; AVR integer overflow/range и cold-start/filter-switch golden tests ещё требуют точной проверки.
 
 ## 1. Порядок обработки в slow_dsp()
 
@@ -90,7 +90,11 @@ filt_var() находится в usdx_filter.h. Вызов выполняетс�
        zz1 = za0
        za0 = (30*(za0-zz2) + 25*zz1) >> 5
 
-   Комментарий источника называет её 300-Hz stage. Её точную частотную характеристику ещё надо проверить; коэффициентная DC-сумма числителя не равна нулю, поэтому не следует автоматически переименовывать её в идеальный DC-block/high-pass.
+   Комментарий источника называет её 300-Hz stage. Поскольку zz2 и zz1 обновляются до вычисления, на этой строке zz2 — предыдущий вход x[n-1], а zz1 — текущий x[n]. Поэтому линейная форма:
+
+       p[n] = (55*x[n] - 30*x[n-1]) / 32
+
+   DC gain равен 25/32 = 0.78125 (-2.14 dB), Nyquist gain — 85/32 = 2.65625 (+8.49 dB). Это high-shelf-like секция, а не DC-block с нулём на 0 Hz. Комментарий “300-Hz” не является достаточным определением её cutoff.
 
 2. Первую Direct Form I biquad секцию с состояниями za1/za2 (input history) и zb1/zb2 (output history):
 
@@ -106,6 +110,19 @@ filt_var() находится в usdx_filter.h. Вызов выполняетс�
 
 Затем histories сдвигаются, функция возвращает zc0. UI labels в конфигурации F_MCU>16 MHz: Full, 3000, 2400, 1800; для другого F_MCU: Full, 2400, 2000, 1500. Это программные labels, не подтверждённые здесь измеренные -3 dB bandwidths.
 
+### Линеаризованная частотная характеристика (пока не AVR bit-exact)
+
+Из этих difference equations получаются следующие transfer functions при fs=7812.5 Hz. Учитывается порядок обновления zz1/zz2; целочисленные округления и overflow пока исключены. Пик и границы ниже — расчётная линейная характеристика, не результат измерения прошивки на радио.
+
+| filt | Peak frequency | Peak gain | Относительная полоса -3 dB |
+|---:|---:|---:|---:|
+| 1 | 2593 Hz | 5.493 (14.80 dB) | 2360–2794 Hz |
+| 2 | 1984 Hz | 3.412 (10.66 dB) | 1621–2239 Hz |
+| 3 | 1556 Hz | 2.193 (6.82 dB) | 838–2034 Hz |
+
+Получается выраженная peaking/band-pass-like характеристика, а не монотонный low-pass с одним cutoff. Это подтверждено отдельной длинной sinus simulation на wide integer recurrence при амплитуде 100: измеренные коэффициенты совпали с аналитическим расчётом с малой ошибкой квантования. Перед тем как считать эти числа эталоном, требуется сравнить AVR-GCC fixed-vector output: исходные SSB IIR выражения также используют 16-bit int промежуточные значения на AVR.
+
+
 ### CW (filt=4..7)
 
 CW branch использует другую пару biquad секций, затем возвращает zc0 >> 3 для компенсации заявленного front-end gain 64x. В выбранном usdx_settings.h FILTER_700HZ выключен (определение закомментировано), поэтому работает основной блок с коэффициентами, подписанными как варианты 600 Hz ±250/100/50/18 Hz. Menu labels: 500, 200, 100, 50; они не совпадают буквально с названиями комментариев в коде и должны рассматриваться как UI labels, а не точная measured bandwidth.
@@ -116,7 +133,16 @@ CW branch использует другую пару biquad секций, зат
 
 Следствие: после смены filter, обхода фильтра или переключения SSB/CW старые za*, zb*, zc*, zz* могут попасть в новый filter path. Не следует считать смену filter equivalent к запуску нового filter с нулевыми history. Это требует отдельного transient/reset test. В то же время автоматически обнулять все histories при каждом sample или менять исходное поведение при переносе нельзя.
 
-## 6. Открытые численные вопросы
+## 6. Исполняемые IIR reference model
+
+Добавлены:
+
+- reference/rx_iir.py — wide-intermediate модель SSB filters 1..3, сохраняющая порядок обновления history и arithmetic right shifts; filt=0 bypass не меняет состояния.
+- reference/test_rx_iir.py — zero-input stability, импульсные golden vectors по каждому SSB filter, frozen state в bypass, state carry-over при смене фильтра и явный отказ от неподдержанных CW IDs.
+
+Шесть focused recurrence/lifecycle assertions проверены. Модель не воспроизводит AVR signed overflow и не реализует CW filters 4..7.
+
+## 7. Открытые численные вопросы
 
 - Диапазоны умножений и сумм в SSB IIR для реального AGC/volume output не оценены.
 - Для NR in-ea1 должен быть проверен на AVR signed-int overflow при крайних внутренних уровнях.
@@ -124,7 +150,7 @@ CW branch использует другую пару biquad секций, зат
 - Проверить скачок/звон после переключения filt, bypass/re-enable и mode.
 - Проверить, влияет ли 600 Hz CW active branch / disabled 700 Hz alternative на желаемую конфигурацию переноса.
 
-## 7. Исходные участки кода
+## 8. Исходные участки кода
 
 - process_nr(), slow_dsp() и EA() macro:
   https://github.com/threeme3/usdx/blob/bf8acd31b8/usdx.ino#L2156-L2157
