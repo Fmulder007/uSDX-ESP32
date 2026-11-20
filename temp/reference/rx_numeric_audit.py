@@ -153,9 +153,15 @@ def audit_ssb_iir_intermediates(
         "prefilter_term30",
         "prefilter_term25",
         "prefilter_sum",
+        "stage1_input_term2",
         "stage1_feed_sum",
+        "stage1_feedback_term1",
+        "stage1_feedback_term2",
         "stage1_feedback_sum",
+        "stage2_input_term2",
         "stage2_feed_sum",
+        "stage2_feedback_term1",
+        "stage2_feedback_term2",
         "stage2_feedback_sum",
         "za0",
         "zb0",
@@ -179,24 +185,61 @@ def audit_ssb_iir_intermediates(
         prefilter_sum = prefilter_term30 + prefilter_term25
         za0 = prefilter_sum >> 5
 
-        stage1_feed_sum = za0 + 2 * za1 + za2
+        stage1_input_term2 = 2 * za1
+        stage1_feed_sum = za0 + stage1_input_term2 + za2
+        stage2_input_term2 = 0
+        stage1_feedback_term1 = 0
+        stage1_feedback_term2 = 0
+        stage2_feedback_term1 = 0
+        stage2_feedback_term2 = 0
+
         if filt == 1:
-            stage1_feedback_sum = 13 * zb1 + 11 * zb2
+            stage1_feedback_term1 = 13 * zb1
+            stage1_feedback_term2 = 11 * zb2
+            stage1_feedback_sum = (
+                stage1_feedback_term1 + stage1_feedback_term2
+            )
             zb0 = (stage1_feed_sum >> 1) - (stage1_feedback_sum >> 4)
-            stage2_feed_sum = zb0 + 2 * zb1 + zb2
-            stage2_feedback_sum = 18 * zc1 + 11 * zc2
+
+            stage2_input_term2 = 2 * zb1
+            stage2_feed_sum = zb0 + stage2_input_term2 + zb2
+            stage2_feedback_term1 = 18 * zc1
+            stage2_feedback_term2 = 11 * zc2
+            stage2_feedback_sum = (
+                stage2_feedback_term1 + stage2_feedback_term2
+            )
             zc0 = (stage2_feed_sum >> 1) - (stage2_feedback_sum >> 4)
         elif filt == 2:
-            stage1_feedback_sum = 2 * zb1 + 8 * zb2
+            stage1_feedback_term1 = 2 * zb1
+            stage1_feedback_term2 = 8 * zb2
+            stage1_feedback_sum = (
+                stage1_feedback_term1 + stage1_feedback_term2
+            )
             zb0 = (stage1_feed_sum >> 1) - (stage1_feedback_sum >> 4)
-            stage2_feed_sum = zb0 + 2 * zb1 + zb2
-            stage2_feedback_sum = 4 * zc1 + 8 * zc2
+
+            stage2_input_term2 = 2 * zb1
+            stage2_feed_sum = zb0 + stage2_input_term2 + zb2
+            stage2_feedback_term1 = 4 * zc1
+            stage2_feedback_term2 = 8 * zc2
+            stage2_feedback_sum = (
+                stage2_feedback_term1 + stage2_feedback_term2
+            )
             zc0 = (stage2_feed_sum >> 2) - (stage2_feedback_sum >> 4)
         else:
-            stage1_feedback_sum = 4 * zb2
+            stage1_feedback_term1 = 0 * zb1
+            stage1_feedback_term2 = 4 * zb2
+            stage1_feedback_sum = (
+                stage1_feedback_term1 + stage1_feedback_term2
+            )
             zb0 = (stage1_feed_sum >> 1) - (stage1_feedback_sum >> 4)
-            stage2_feed_sum = zb0 + 2 * zb1 + zb2
-            stage2_feedback_sum = 4 * zc2
+
+            stage2_input_term2 = 2 * zb1
+            stage2_feed_sum = zb0 + stage2_input_term2 + zb2
+            stage2_feedback_term1 = 0 * zc1
+            stage2_feedback_term2 = 4 * zc2
+            stage2_feedback_sum = (
+                stage2_feedback_term1 + stage2_feedback_term2
+            )
             zc0 = (stage2_feed_sum >> 2) - (stage2_feedback_sum >> 4)
 
         observed = {
@@ -204,9 +247,15 @@ def audit_ssb_iir_intermediates(
             "prefilter_term30": prefilter_term30,
             "prefilter_term25": prefilter_term25,
             "prefilter_sum": prefilter_sum,
+            "stage1_input_term2": stage1_input_term2,
             "stage1_feed_sum": stage1_feed_sum,
+            "stage1_feedback_term1": stage1_feedback_term1,
+            "stage1_feedback_term2": stage1_feedback_term2,
             "stage1_feedback_sum": stage1_feedback_sum,
+            "stage2_input_term2": stage2_input_term2,
             "stage2_feed_sum": stage2_feed_sum,
+            "stage2_feedback_term1": stage2_feedback_term1,
+            "stage2_feedback_term2": stage2_feedback_term2,
             "stage2_feedback_sum": stage2_feedback_sum,
             "za0": za0,
             "zb0": zb0,
