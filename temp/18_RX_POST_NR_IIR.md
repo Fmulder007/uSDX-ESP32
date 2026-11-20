@@ -143,15 +143,16 @@ CW branch использует другую пару biquad секций, зат
 |---|---:|---:|---:|
 | max abs prefilter sum | **37315** | **37315** | **37315** |
 | max abs stage-1 feedback sum | 29175 | 7834 | 3120 |
+| max abs stage-2 feedback term 1 | **46980** | 2568 | 0 |
 | max abs stage-2 feedback sum | **43357** | 5068 | 1468 |
 
-У всех трёх ветвей общая prefilter sum выходит за signed int16. У filt=1 дополнительно выходит за диапазон второй feedback sum. Это reachable в wide recurrence на конкретном векторе, но после первого переполнения фактическая AVR state trajectory может разойтись с wide baseline.
+У всех трёх ветвей общая prefilter sum выходит за signed int16. У filt=1 ещё до сложения feedback terms произведение 18*zc1 достигает **46980**; сама stage-2 feedback sum достигает **43357**. Это reachable в wide recurrence на конкретном векторе, но после первого переполнения фактическая AVR state trajectory может разойтись с wide baseline.
 
 **Вектор B:** синус 3,9 kHz, амплитуда 128, 5000 samples. Для всех трёх фильтров ни один из перечисленных промежуточных узлов не вышел за signed int16. Это лишь контрольный вектор, не глобальная гарантия диапазона.
 
 Риск важен, потому что filt_var() вызывается **до** финального slow_dsp() clipping [-512,511]. Настройки volume допускают 0…16; при agc=1, volume=16 нет финального right shift перед IIR, а при agc!=1, volume=16 исходный код выполняет left shift на три бита. Значит, нельзя считать, что только финальный audio clip ограничивает внутреннюю IIR арифметику.
 
-Добавлены audit_ssb_iir_intermediates() в reference/rx_numeric_audit.py и два теста в test_rx_numeric_audit.py: overrange vector и low-amplitude control vector. Это range warning по wide trajectory, не утверждение о точном AVR результате.
+Добавлены audit_ssb_iir_intermediates() в reference/rx_numeric_audit.py; теперь он проверяет не только суммы, но и отдельные произведения до сложения. Два теста в test_rx_numeric_audit.py покрывают overrange и low-amplitude control vectors. Это range warning по wide trajectory, не утверждение о точном AVR результате.
 
 ## 7. Исполняемые IIR reference model
 
