@@ -39,8 +39,10 @@
 | 17_RX_NUMERIC_RANGE.md | Диапазоны CIC, Hilbert и SSB IIR, int16 overrange и план проверки AVR arithmetic |
 | 18_RX_POST_NR_IIR.md | Реальная последовательность slow_dsp, NR integer EMA/deadband, IIR sections и state lifecycle |
 | 19_RX_HILBERT_IMAGE_REJECTION.md | Проверка фактического подавления боковой полосы FIR Hilbert на 8 kSPS и 7812.5 SPS |
+| 20_RX_HILBERT_CANDIDATES.md | Два проверенных Q15-варианта Hilbert FIR на 19 и 23 точки |
 | reference/rx_nr.py и rx_iir.py | Отдельные NR и SSB IIR reference models с тестами |
 | reference/avr_hilbert_probe.cpp / avr_iir_probe.cpp / avr_nr_probe.cpp | AVR-GCC диагностические probes для Hilbert, NR и SSB IIR арифметики |
+| reference/rx_hilbert_candidates.py | Исследовательские Q15 Hilbert FIR 19/23 taps; исходный фильтр не заменён |
 | reference/ | CIC, Hilbert/I delay, частичный RX pipeline и SSB post-processing модели с тестами |
 
 ## Как читать материалы
