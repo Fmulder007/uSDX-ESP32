@@ -12,6 +12,7 @@ startup timing scheduler, physical sample-and-hold aperture, analog settling,
 or real I/Q hardware mismatch.
 """
 
+import argparse
 import math
 
 from rx_adc_input import RxAdcInputState
@@ -32,9 +33,11 @@ PAIR_COUNT = 1024
 INPUT_AMPLITUDE = 511
 ATT2 = 2
 WARMUP_PAIRS = 128
+SOURCE_CPU_HZ = 20007000.0
 
 
-def measure_one_orientation(frequency_hz, q_sign, hilbert_kind, taps=None):
+def measure_one_orientation(frequency_hz, q_sign, hilbert_kind, taps=None,
+                            q_skew_cycles=0.0):
     adc = RxAdcInputState(startup_adc_register=0)
     cic = RxCicState()
 
@@ -49,7 +52,8 @@ def measure_one_orientation(frequency_hz, q_sign, hilbert_kind, taps=None):
     for tick in range(PAIR_COUNT * 8 + (WARMUP_PAIRS * 8)):
         phase = 2.0 * math.pi * frequency_hz * tick / SAMPLE_RATE_TIMER
         i_sample = round(INPUT_AMPLITUDE * math.cos(phase))
-        q_sample = round(q_sign * INPUT_AMPLITUDE * math.sin(phase))
+        q_phase = phase + 2.0 * math.pi * frequency_hz * q_skew_cycles / SOURCE_CPU_HZ
+        q_sample = round(q_sign * INPUT_AMPLITUDE * math.sin(q_phase))
 
         channel, sample = adc.push_tick(i_sample, q_sample)
         pair = cic.push_event(channel, sample)
@@ -66,9 +70,12 @@ def measure_one_orientation(frequency_hz, q_sign, hilbert_kind, taps=None):
     return math.sqrt(sum(squares) / len(squares))
 
 
-def measure_image_rejection(frequency_hz, hilbert_kind, taps=None):
+def measure_image_rejection(frequency_hz, hilbert_kind, taps=None,
+                             q_skew_cycles=0.0):
     levels = [
-        measure_one_orientation(frequency_hz, sign, hilbert_kind, taps)
+        measure_one_orientation(
+            frequency_hz, sign, hilbert_kind, taps, q_skew_cycles
+        )
         for sign in (1, -1)
     ]
     weak, strong = sorted(levels)
@@ -77,7 +84,7 @@ def measure_image_rejection(frequency_hz, hilbert_kind, taps=None):
     return 20.0 * math.log10(strong / weak)
 
 
-def sweep():
+def sweep(q_skew_cycles=0.0):
     candidates = (
         ("source15", "source", None),
         ("comp17_minimax", "q15", COMPENSATED_HILBERT_17_MINIMAX_Q15),
@@ -90,13 +97,26 @@ def sweep():
     for frequency in range(650, 3401, 50):
         row = {"frequency_hz": frequency}
         for name, kind, taps in candidates:
-            row[name] = measure_image_rejection(frequency, kind, taps)
+            row[name] = measure_image_rejection(
+                frequency, kind, taps, q_skew_cycles=q_skew_cycles
+            )
         rows.append(row)
     return rows
 
 
 def main():
-    rows = sweep()
+    parser = argparse.ArgumentParser(
+        description="Sweep RX Hilbert image rejection through ADC input and CIC"
+    )
+    parser.add_argument(
+        "--q-skew-cycles",
+        type=float,
+        default=0.0,
+        help="additional Q sample-time offset in source CPU cycles (default: 0)",
+    )
+    args = parser.parse_args()
+    rows = sweep(args.q_skew_cycles)
+    print("Q aperture skew: {:.2f} source CPU cycles".format(args.q_skew_cycles))
     names = ("source15", "comp17_minimax", "comp19_minimax", "comp21_minimax", "comp23_ls", "comp27_ls")
     print("frequency_hz," + ",".join(name + "_db" for name in names))
     for row in rows:
