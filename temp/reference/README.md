@@ -21,7 +21,7 @@
 - `test_rx_cic.py` — проверка расписания функций против прямой каскадной формулы.
 - `rx_quadrature.py` — активный Hilbert FIR и 7-sample I delay; применяет att2.
 - `test_rx_quadrature.py` — импульсная характеристика, задержка I и знак SSB-суммы.
-- `test_rx_hilbert_image_rejection.py` — сравнение RMS двух квадратурных orientations на 650 и 3400 Hz при 8 kSPS и реальных 7812.5 SPS.
+- `test_rx_hilbert_image_rejection.py` — isolated FIR test без ADC/CIC: сравнение двух квадратурных orientations на 650 и 3400 Hz; не использовать его как полный RX image-rejection результат.
 - `rx_hilbert_candidates.py` / `test_rx_hilbert_candidates.py` — experimental 19/23-tap Q15 Hilbert FIRs, group-delay and image-rejection tests; baseline coefficients unchanged.
 - `rx_hilbert_cic_compensation.py` / `test_rx_hilbert_cic_compensation.py` — 23/27-tap Q15 FIRs fitted to the I-midpoint amplitude compensation and tested through ADC input + CIC + Hilbert.
 - `rx_hilbert_cic_sweep.py` — repeatable 650…3400 Hz / 50 Hz full-chain sweep of source15, compensated23 and compensated27 candidates.
