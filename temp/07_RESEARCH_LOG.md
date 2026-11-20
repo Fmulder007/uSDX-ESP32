@@ -122,4 +122,13 @@
 - Добавлены temp/reference/rx_nr.py и test_rx_nr.py. Шесть focused assertions проверены на recurrence: NR1 passthrough, NR2 step response, NR8 deadband, отрицательное truncation, NR0 freeze/level reuse, range validation.
 - IIR карта: filt=0 bypass; SSB filt1..3 — общая 300-Hz pre-section и две Direct Form I biquad sections; CW filt4..7 — отдельные biquad coefficients, zc0>>3 output. UI labels не считать измеренной полосой пропускания.
 - Все histories filt_var() объявлены static; filter menu выставляет _init, но сами фильтровые histories не reset-ятся. При filt=0 фильтр не вызывается и его histories заморожены. Это потенциальный источник transient при смене filter/mode.
-- Подробный разбор: temp/18_RX_POST_NR_IIR.md. NR model пока отдельная и не подключена к rx_ssb_adc_chain.py; IIR model ещё предстоит реализовать после AVR numeric audit.
+- Подробный разбор: temp/18_RX_POST_NR_IIR.md. Добавлены wide-intermediate модели rx_nr.py/rx_iir.py и подключены через rx_ssb_post.py → rx_ssb_chain.py → rx_ssb_adc_chain.py. Default nr=0/filt=0 сохраняет прежний baseline. Полный AVR-GCC width comparison и CW/AM/FM ещё открыты.
+
+
+### RX SSB chain integration: NR/IIR — 2026-11-20
+- Расширен RxSsbPostState: добавлены persistent RxNrState и RxSsbIirState после AGC/volume, перед final clip.
+- RxSsbReferencePipeline и RxSsbAdcReferencePipeline теперь принимают nr=0..8 и SSB filt=0..3 и передают параметры в post stage.
+- При defaults nr=0/filt=0 прежнее поведение остаётся прежним; filt=0 не изменяет stored IIR histories, NR=0 не изменяет ema state.
+- CW filters 4..7 и AM/FM не аппроксимируются: остаются явным NotImplementedError.
+- Добавлены post integration tests и full-chain config test. В этом исследовательском окружении полный unittest suite не запускался; отдельные NR/IIR recurrence and post-stage assertions проверены вручную по тем же формулам.
+- Полная карта и ограничения: temp/15_RX_REFERENCE_PIPELINE.md; NR/IIR детали: temp/18_RX_POST_NR_IIR.md.
