@@ -120,17 +120,34 @@ The full-int16 bound is below signed int32 maximum by180,647,227.
 
 The 23-tap and 27-tap least-squares tables remain in rx_hilbert_cic_compensation.py. They are not the first recommendation after the minimax search: 19/21 taps provide better worst-case rejection with fewer pair-products and less delay. The longer tables remain useful comparison points.
 
-## 5. Files and repeatable verification
+## 5. Чувствительность к разнице aperture I/Q
+
+Поскольку действительные ISR-to-ADSC delays и ADC prescaler phase ещё не измерены, проверен условный сдвиг Q sample time относительно I. В модели он вводится как дополнительная фаза Q, соответствующая N тактам исходного CPU clock 20.007 MHz. Это **stress test**, не утверждение о фактическом skew на AVR.
+
+На верхнем краю 3400 Hz:
+
+| Дополнительный Q skew | Phase shift | Minimax19 | Minimax21 |
+|---:|---:|---:|---:|
+| 0 cycles | 0° | 48.16 dB | 50.87 dB |
+| 10 cycles | 0.612° | 43.53 dB | 44.31 dB |
+| 12 cycles | 0.734° | 42.53 dB | 43.10 dB |
+| 14 cycles | 0.857° | 41.47 dB | 41.93 dB |
+
+Для 19 taps запас до порога43 dB становится небольшим уже при10-cycle skew. 21 taps сохраняет чуть больший запас, но тоже теряет43 dB около14 cycles. Следовательно, **фактический ISR-to-ADSC/sample-and-hold skew — блокирующая проверка до окончательного выбора**. Если на железе окажется значимый I/Q phase mismatch, может потребоваться не только более длинный FIR, но и аппаратно/цифровое phase alignment.
+
+## 6. Files and repeatable verification
 
 - reference/rx_hilbert_cic_compensation.py — 17/19/21 minimax and 23/27 least-squares Q15 coefficient sets, compensation target and accumulator bounds.
 - reference/test_rx_hilbert_cic_compensation.py — full-chain IRR, delay, target fit and accumulator checks.
-- reference/rx_hilbert_cic_sweep.py — repeatable 50-Hz full-chain sweep; prints CSV and minimum IRR for source15 and all candidate families.
+- reference/rx_hilbert_cic_sweep.py — repeatable 50-Hz full-chain sweep; prints CSV and minimum IRR for source15 and all candidate families. Optional --q-skew-cycles adds a controlled Q sample-time offset.
 
 Run from temp/reference:
 
     python rx_hilbert_cic_sweep.py
+    python rx_hilbert_cic_sweep.py --q-skew-cycles 10
+    python rx_hilbert_cic_sweep.py --q-skew-cycles 12
 
-**Preliminary recommendation:** use 19 taps as the first ESP32 prototype candidate. Keep 21 taps as the higher-margin alternative. This is a recommendation for the next experiment, not a final production choice.
+**Preliminary recommendation:** keep 19 taps as the low-compute ESP32 prototype candidate and 21 taps as the higher-margin option. Do not make the final choice until the actual Q/I aperture skew has been bounded. This is a recommendation for the next experiment, not a final production choice.
 
 Before replacing source coefficients:
 1. уточнить реальные I/Q sample-and-hold offsets and analog acquisition;
