@@ -140,7 +140,8 @@ slow_dsp(ac) вызывается один раз на выходную пару
 
 - [CIC schedule model](reference/rx_cic.py) и [unit tests](reference/test_rx_cic.py): активная восьмифазная последовательность.
 - [Hilbert/I-delay model](reference/rx_quadrature.py) и [unit tests](reference/test_rx_quadrature.py): точное source-expression rounding, 14-value Q history и 7-sample I delay.
-- [Combined partial RX pipeline](reference/rx_chain.py) and [integration tests](reference/test_rx_chain.py): CIC raw output → att2 → Hilbert/I delay.
-- [Baseline SSB post-processing](reference/rx_ssb_post.py) and [tests](reference/test_rx_ssb_post.py): fast AGC, volume and clipping for nr=0/filt=0.
+- [ADC input model](reference/rx_adc_input.py) and [tests](reference/test_rx_adc_input.py): MUX next/read previous and I midpoint interpolation.
+- [Combined RX SSB pipeline](reference/rx_ssb_adc_chain.py) and [integration tests](reference/test_rx_ssb_adc_chain.py): Timer2-event inputs → ADC adapter → CIC → att2/Hilbert/I delay → baseline fast AGC/volume/clipping.
+- [Pipeline passport](15_RX_REFERENCE_PIPELINE.md): exact scope, boundaries and remaining limitations.
 
-The partial SSB chain is joined in [rx_ssb_chain.py](reference/rx_ssb_chain.py): CIC → att2/Hilbert/I delay → baseline fast AGC/volume/clipping. It begins with logical I/Q samples and does not yet include ADC mux/read-previous scheduling, I midpoint interpolation, NR/IIR, AM/FM or audio output interpolation. Its scope, interfaces and test instructions are summarized in [15_RX_REFERENCE_PIPELINE.md](15_RX_REFERENCE_PIPELINE.md).
+The partial source-compatible SSB chain models the software event pipeline, but not the exact analog sample-and-hold aperture, acquisition/settling time or jitter. NR/IIR, AM/FM and audio output interpolation are also still outside the chain.
