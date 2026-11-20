@@ -39,7 +39,7 @@
 | 17_RX_NUMERIC_RANGE.md | Диапазоны CIC, Hilbert и SSB IIR, int16 overrange и план проверки AVR arithmetic |
 | 18_RX_POST_NR_IIR.md | Реальная последовательность slow_dsp, NR integer EMA/deadband, IIR sections и state lifecycle |
 | reference/rx_nr.py и rx_iir.py | Отдельные NR и SSB IIR reference models с тестами |
-| reference/avr_hilbert_probe.c / avr_iir_probe.c | AVR-GCC диагностические probes для Hilbert и SSB IIR арифметики |
+| reference/avr_hilbert_probe.c / avr_iir_probe.cpp | AVR-GCC диагностические probes для Hilbert и SSB IIR арифметики |
 | reference/ | CIC, Hilbert/I delay, частичный RX pipeline и SSB post-processing модели с тестами |
 
 ## Как читать материалы
