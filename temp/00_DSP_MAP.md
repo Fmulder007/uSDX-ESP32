@@ -80,15 +80,22 @@ Runtime-настройки некоторых параметров могут з
 
 Внутри DSP не должно быть I2C, GPIO, OLED, Serial, Wi-Fi, динамического выделения памяти или ожиданий аппаратуры.
 
-## 7. Пока не доказано
+## 7. Уже сделано в host-side reference
+
+- Добавлены модели RX ADC input, CIC, Hilbert/I-delay и базового SSB post-processing.
+- Частичная сквозная timer-event цепочка: [reference/rx_ssb_adc_chain.py](reference/rx_ssb_adc_chain.py).
+- Программный MUX/read-previous pipeline и midpoint interpolation I моделируются и подключены.
+- CIC расписание сверяется с прямой двухступенчатой формулой; Hilbert — с impulse response; SSB post — с AGC/volume/clipping tests.
+
+## 8. Что ещё не доказано
 
 - Побитовая/численная эквивалентность AVR и ESP32.
+- Точное analog sample-and-hold aperture, ADC acquisition/settling и jitter внутри conversion.
 - Полный бюджет времени активного RX-пути.
-- Источник аналоговых I/Q и микрофонных данных на ESP32.
+- NR/IIR, AM/FM и аудио-интерполятор в объединённой reference-модели.
+- Полный TX reference и реальные задержки PLL command / Si5351.
 - Окончательный block size, DMA и распределение задач.
-- Добавлены host-side модели RX ADC input, CIC, Hilbert/I-delay и базового SSB post-processing; их частичная сквозная timer-event цепочка находится в [reference/rx_ssb_adc_chain.py](reference/rx_ssb_adc_chain.py).
-- Программный MUX/read-previous pipeline и midpoint interpolation I моделируются и подключены; CIC сверяется с прямой двухступенчатой формулой, Hilbert — с impulse response, SSB post — с AGC/volume/clipping tests.
-- Точное analog sample-and-hold aperture/settling/jitter, NR/IIR, AM/FM, аудио-интерполятор и TX reference ещё не завершены; спектральные результаты не измерены.
+- Спектральные измерения и подавление нежелательной боковой полосы.
 
-Подробности: [RX](01_RX_PATH.md), [частичный RX reference pipeline](15_RX_REFERENCE_PIPELINE.md), [TX](02_TX_PATH.md), [состояние и время](03_STATE_AND_TIMING.md), [lifecycle состояния](12_STATE_LIFECYCLE.md), [варианты переноса](04_PORTING_OPTIONS.md), [черновик DSP API](10_DSP_INTERFACE_DRAFT.md), [план эталонных тестов](11_REFERENCE_TEST_PLAN.md), [host-side CIC model](reference/), [TX phase scaling](13_TX_PHASE_SCALING.md).
+Подробности: [RX](01_RX_PATH.md), [частичный RX reference pipeline](15_RX_REFERENCE_PIPELINE.md), [TX](02_TX_PATH.md), [состояние и время](03_STATE_AND_TIMING.md), [lifecycle состояния](12_STATE_LIFECYCLE.md), [варианты переноса](04_PORTING_OPTIONS.md), [черновик DSP API](10_DSP_INTERFACE_DRAFT.md), [план эталонных тестов](11_REFERENCE_TEST_PLAN.md), [host-side reference models](reference/), [TX phase scaling](13_TX_PHASE_SCALING.md).
 Дополнительная детализация: [восьмифазный CIC и коэффициенты](08_RX_CIC_PHASES.md), [ADC timing и I/Q mux pipeline](09_ADC_TIMING.md).
