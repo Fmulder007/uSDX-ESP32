@@ -47,8 +47,20 @@ def accumulator_bound_for_peak(taps_q15: Sequence[int], sample_peak: int) -> int
 
 
 def accumulator_bound_full_int16(taps_q15: Sequence[int]) -> int:
-    """Conservative accumulator bound for arbitrary signed-int16 history."""
-    return accumulator_bound_for_peak(taps_q15, 32768)
+    """Exact endpoint-difference bound for arbitrary signed-int16 history.
+
+    The largest possible signed-int16 difference is 32767 - (-32768) = 65535,
+    not 65536. Using the generic symmetric-peak helper would be one count
+    more conservative per coefficient pair.
+    """
+    if len(taps_q15) < 3 or len(taps_q15) % 2 != 1:
+        raise ValueError("Hilbert FIR length must be odd and >= 3")
+    half = len(taps_q15) // 2
+    if int(taps_q15[half]) != 0:
+        raise ValueError("Hilbert centre coefficient must be zero")
+    if any(int(taps_q15[k]) != -int(taps_q15[-1-k]) for k in range(half)):
+        raise ValueError("Hilbert coefficients must be antisymmetric")
+    return 65535 * sum(abs(int(v)) for v in taps_q15[:half])
 
 
 def compensation_target_magnitude(frequency_hz: float) -> float:
