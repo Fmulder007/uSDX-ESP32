@@ -10,7 +10,8 @@ documented separately in ../09_ADC_TIMING.md.
 
 Arithmetic uses Python integers. For the original ADC range (-511..512),
 the CIC intermediate values remain within signed 16-bit range for this
-filter/scaling configuration. Hilbert and later DSP stages are not modeled.
+filter/scaling configuration. The output pair is raw CIC data before att2;
+att2 is applied by RxQuadratureState, matching the source process() boundary.
 """
 
 from dataclasses import dataclass
@@ -24,7 +25,6 @@ IqPair = Tuple[int, int]
 class RxCicState:
     """Persistent state of the active NEW_RX=1 CIC schedule."""
 
-    att2: int = 2
     phase: int = 0
 
     # I branch state, copied by role from the source variables.
@@ -86,9 +86,8 @@ class RxCicState:
             )
             self.i_s1za1 = i_s1za0
 
-            # process() scales both CIC outputs by att2.
-            self.q_ac2 >>= self.att2
-            i_ac2 >>= self.att2
+            # Return raw CIC outputs. Source process() applies att2 after
+            # this boundary; RxQuadratureState models that next operation.
             output = (i_ac2, self.q_ac2)
 
         elif phase == 1:
@@ -150,13 +149,12 @@ class RxCicState:
 def process_iq_stream(
     i_samples: Sequence[int],
     q_samples: Sequence[int],
-    att2: int = 2,
 ) -> List[IqPair]:
     """Feed equally sized I and Q arrays in source interleaved order."""
     if len(i_samples) != len(q_samples):
         raise ValueError("I and Q input arrays must have equal length")
 
-    state = RxCicState(att2=att2)
+    state = RxCicState()
     output: List[IqPair] = []
 
     for i_sample, q_sample in zip(i_samples, q_samples):
