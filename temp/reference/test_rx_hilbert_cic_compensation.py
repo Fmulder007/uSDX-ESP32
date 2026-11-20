@@ -21,7 +21,7 @@ from rx_hilbert_cic_compensation import (
 
 
 def full_chain_image_rejection_db(frequency_hz, taps_q15, pair_count=2048,
-                                  amplitude=511, att2=2):
+                                  amplitude=511, att2=2, q_phase_deg=0.0):
     levels = []
     for q_sign in (1, -1):
         adc = RxAdcInputState(startup_adc_register=0)
@@ -35,7 +35,9 @@ def full_chain_image_rejection_db(frequency_hz, taps_q15, pair_count=2048,
         for tick in range(pair_count * 8 + 1024):
             phase = 2.0 * math.pi * frequency_hz * tick / 62500.0
             i_sample = round(amplitude * math.cos(phase))
-            q_sample = round(q_sign * amplitude * math.sin(phase))
+            q_sample = round(
+                q_sign * amplitude * math.sin(phase + math.radians(q_phase_deg))
+            )
             channel, sample = adc.push_tick(i_sample, q_sample)
             pair = cic.push_event(channel, sample)
 
@@ -172,6 +174,35 @@ class TestCicCompensatedHilbert(unittest.TestCase):
         )
         self.assertLess(
             full_chain_image_rejection_db(3400, COMPENSATED_HILBERT_17_MINIMAX_Q15),
+            43.0,
+        )
+
+
+    def test_q_aperture_skew_sensitivity_is_explicit(self):
+        # The source snapshot uses F_CPU=20,007,000 Hz. A timing skew of
+        # 10 CPU cycles corresponds to about 0.612 degrees at 3400 Hz.
+        skew_10_cycles_deg = 360.0 * 3400.0 * 10.0 / 20007000.0
+        skew_12_cycles_deg = 360.0 * 3400.0 * 12.0 / 20007000.0
+
+        self.assertGreater(
+            full_chain_image_rejection_db(
+                3400, COMPENSATED_HILBERT_19_MINIMAX_Q15,
+                q_phase_deg=skew_10_cycles_deg,
+            ),
+            43.0,
+        )
+        self.assertLess(
+            full_chain_image_rejection_db(
+                3400, COMPENSATED_HILBERT_19_MINIMAX_Q15,
+                q_phase_deg=skew_12_cycles_deg,
+            ),
+            43.0,
+        )
+        self.assertGreater(
+            full_chain_image_rejection_db(
+                3400, COMPENSATED_HILBERT_21_MINIMAX_Q15,
+                q_phase_deg=skew_12_cycles_deg,
+            ),
             43.0,
         )
 
