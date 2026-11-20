@@ -16,6 +16,7 @@
 - `test_rx_iir.py` — impulse golden vectors, zero-input stability, bypass freeze и state carry-over.
 - `avr_hilbert_probe.cpp` / `avr_hilbert_probe.md` — standalone probe для фактического AVR-GCC результата signed-overflow expression и wide comparison.
 - `avr_iir_probe.cpp` / `avr_iir_probe.md` — сравнение source-style AVR 16-bit SSB IIR filters 1..3 с int32 wide variants на фиксированном 2.5-kHz vector.
+- `avr_nr_probe.cpp` / `avr_nr_probe.md` — сравнение source-style NR integer recurrence с int32 wide variant на full-range transition vector.
 - `rx_cic.py` — активный восьмифазный RX CIC из NEW_RX=1; выдаёт сырые пары до att2.
 - `test_rx_cic.py` — проверка расписания функций против прямой каскадной формулы.
 - `rx_quadrature.py` — активный Hilbert FIR и 7-sample I delay; применяет att2.
