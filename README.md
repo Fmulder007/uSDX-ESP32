@@ -7,6 +7,7 @@
 - [plan.md](plan.md) — утверждённый план проекта и выбранная исходная версия PE1NNZ.
 - [temp/README.md](temp/README.md) — рабочая тетрадь: карта исследований, промежуточные результаты, варианты и открытые вопросы.
 - [temp/00_DSP_MAP.md](temp/00_DSP_MAP.md) — краткий обзор архитектуры RX/TX DSP.
+- [temp/reference/](temp/reference/) — исполняемая host-side модель RX CIC и тесты.
 - [ESP32_OLED_Counter](ESP32_OLED_Counter/) — первый проверочный скетч платы и I²C OLED.
 
 ## Рабочая платформа
