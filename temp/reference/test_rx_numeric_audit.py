@@ -104,7 +104,12 @@ class TestRxNumericAudit(unittest.TestCase):
             self.assertIn("prefilter_sum", report["first_int16_overrange"])
 
         # The first SSB filter has an additional overrange feedback sum.
+        self.assertEqual(reports[1]["max_abs"]["stage2_feedback_term1"], 46980)
         self.assertEqual(reports[1]["max_abs"]["stage2_feedback_sum"], 43357)
+        self.assertIn(
+            "stage2_feedback_term1",
+            reports[1]["first_int16_overrange"],
+        )
         self.assertIn(
             "stage2_feedback_sum",
             reports[1]["first_int16_overrange"],
