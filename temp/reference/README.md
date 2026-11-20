@@ -24,6 +24,7 @@
 - `test_rx_hilbert_image_rejection.py` — сравнение RMS двух квадратурных orientations на 650 и 3400 Hz при 8 kSPS и реальных 7812.5 SPS.
 - `rx_hilbert_candidates.py` / `test_rx_hilbert_candidates.py` — experimental 19/23-tap Q15 Hilbert FIRs, group-delay and image-rejection tests; baseline coefficients unchanged.
 - `rx_hilbert_cic_compensation.py` / `test_rx_hilbert_cic_compensation.py` — 23/27-tap Q15 FIRs fitted to the I-midpoint amplitude compensation and tested through ADC input + CIC + Hilbert.
+- `rx_hilbert_cic_sweep.py` — repeatable 650…3400 Hz / 50 Hz full-chain sweep of source15, compensated23 and compensated27 candidates.
 - `rx_chain.py` — объединяет CIC и quadrature в частичный RX pipeline.
 - `test_rx_chain.py` — проверка стыка и однократного применения att2.
 - `rx_ssb_chain.py` — объединяет CIC, Hilbert/I-delay и базовый SSB post-processing.
