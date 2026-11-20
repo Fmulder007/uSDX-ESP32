@@ -100,3 +100,5 @@ prev_phase, phase, dp, wrap через _UA и MAX_DP требуют провер
 3. float/double approximation.
 
 Сравнивать следует не только среднюю ошибку угла, но и максимальную ошибку, симметрию квадрантов, поведение на осях и фазовый delta между соседними samples.
+
+Отдельно см. [TX phase scaling и MAX_DP](13_TX_PHASE_SCALING.md): там разобраны modulo dp, точный предел для filt=0..3 и коррекция prev_phase при ограничении.
