@@ -32,6 +32,7 @@
 - [x] Подготовлена отдельная reference-модель базового SSB slow_dsp (fast AGC/volume/clipping, nr=0/filt=0): temp/reference/rx_ssb_post.py.
 - [x] Выделить process_nr() в отдельную stateful EMA-модель и проверить integer deadband/state freeze: temp/reference/rx_nr.py и test_rx_nr.py.
 - [x] Восстановить SSB filt_var() equations, добавить wide recurrence и impulse/lifecycle tests: temp/reference/rx_iir.py и test_rx_iir.py. Линейная response рассчитана; AVR width audit ещё открыт.
+- [x] Подключить NR и SSB filt=1..3 к rx_ssb_post.py, rx_ssb_chain.py и rx_ssb_adc_chain.py; default nr=0/filt=0 unchanged, CW/AM/FM остаются unsupported.
 - [x] Соединить CIC → Hilbert/I delay → базовый SSB slow_dsp в частичный stateful pipeline: temp/reference/rx_ssb_chain.py.
 - [x] Подключить ADC mux/read-previous порядок и midpoint interpolation I к SSB chain: temp/reference/rx_ssb_adc_chain.py.
 - [ ] Получить эталонный результат на синусе/двухтональном тесте.
@@ -68,7 +69,7 @@
 2. Закрыть временную модель ADC: определить ISR-to-ADSC offsets, ADC prescaler phase и I/Q aperture; analog acquisition/settling — отдельным измерением.
 3. Установить фактическую AVR-GCC арифметику Hilbert на overrange vector: получить точные flags/disassembly и сравнить реальный результат с wide и wrap кандидатами.
 4. Подключить startup timing model к полному RX reference harness и подготовить фиксированные синусоидальные/двухтональные векторы с промежуточными контрольными точками.
-5. Сверить NR/IIR wide models с AVR fixed vectors, выполнить IIR int16 range audit и подключить NR/IIR к сквозному RX harness; AM/FM — отдельными ветвями.
+5. Сверить NR/IIR wide models с AVR fixed vectors и выполнить int16 range audit; затем добавить AM/FM branches.
 6. Подготовить аналогичную модель SSB TX, включая integer atan2 macro semantics, MAX_DP и ADC pipeline.
 7. Проверить и уточнить API из temp/10_DSP_INTERFACE_DRAFT.md по результатам reference harness.
 8. Только после этого начинать перенос на ESP32.
