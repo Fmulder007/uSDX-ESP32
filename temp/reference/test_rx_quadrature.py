@@ -45,10 +45,12 @@ class TestRxQuadrature(unittest.TestCase):
 
     def test_ssb_audio_input_sign(self):
         state = RxQuadratureState(att2=0)
-        result = state.push_pair(128, 0)
+        result = state.push_pair(0, 128)
 
-        # The I delay has not yet emitted the current I sample.
-        self.assertEqual(result.ssb_audio_input, -result.i_delayed - result.q_hilbert)
+        # A positive Q impulse gives a negative Hilbert result; process()
+        # inverts that quadrature branch when forming the SSB audio input.
+        self.assertEqual(result.q_hilbert, -2)
+        self.assertEqual(result.ssb_audio_input, 2)
 
 
 if __name__ == "__main__":
