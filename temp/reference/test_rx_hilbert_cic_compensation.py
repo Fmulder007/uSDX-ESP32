@@ -84,6 +84,7 @@ class TestCicCompensatedHilbert(unittest.TestCase):
 
     def test_delay_matches_candidate_group_delay(self):
         for taps, delay in (
+            (COMPENSATED_HILBERT_17_MINIMAX_Q15, 8),
             (COMPENSATED_HILBERT_19_MINIMAX_Q15, 9),
             (COMPENSATED_HILBERT_21_MINIMAX_Q15, 10),
             (COMPENSATED_HILBERT_23_Q15, 11),
@@ -100,6 +101,7 @@ class TestCicCompensatedHilbert(unittest.TestCase):
 
     def test_q15_accumulator_bounds_fit_signed_int32(self):
         expected = (
+            (COMPENSATED_HILBERT_17_MINIMAX_Q15, 237125632, 948502528, 1896976110),
             (COMPENSATED_HILBERT_19_MINIMAX_Q15, 250888192, 1003552768, 2007074910),
             (COMPENSATED_HILBERT_21_MINIMAX_Q15, 245858304, 983433216, 1966836420),
             (COMPENSATED_HILBERT_23_Q15, 250019840, 1000079360, 2000128200),
