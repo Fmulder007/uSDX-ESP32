@@ -37,6 +37,7 @@
 | 15_RX_REFERENCE_PIPELINE.md | Состав, интерфейс, границы и запуск частичного RX reference pipeline |
 | 16_RX_ADC_STARTUP_TIMING.md | Первая 25-тактовая ADC-конверсия, startup I/Q сдвиг и цикл-тактовая модель |
 | 17_RX_NUMERIC_RANGE.md | Диапазоны CIC, gain R=4, Hilbert int16 overrange и план проверки AVR arithmetic |
+| 18_RX_POST_NR_IIR.md | Реальная последовательность slow_dsp, NR integer EMA/deadband, IIR sections и state lifecycle |
 | reference/ | CIC, Hilbert/I delay, частичный RX pipeline и SSB post-processing модели с тестами |
 
 ## Как читать материалы
@@ -60,7 +61,7 @@
 - Карта RX/TX, состояние и черновик интерфейса подготовлены.
 - Host-side модели RX ADC input, CIC, Hilbert/I-delay и базового SSB post-processing соединены в частичную timer-event цепочку reference/rx_ssb_adc_chain.py. Отдельная reference/rx_adc_timing.py теперь моделирует startup после ADEN с учётом 25-тактовой первой конверсии; сквозная SSB-цепочка пока использует упрощённую установившуюся ADC-модель.
 - Модель reference/rx_adc_input.py повторяет логический MUX/read-previous порядок для установившегося режима и midpoint interpolation I. Startup после ADEN вынесен в отдельную цикл-тактовую модель; точные ISR delays, analog acquisition/settling и jitter ещё не включены.
-- NR/IIR, AM/FM, выходной аудио-интерполятор и TX reference пока не готовы; спектральные измерения ещё не выполнены.
+- NR recurrence теперь отдельно смоделирована и протестирована; её ещё нужно подключить к сквозной SSB chain. IIR, AM/FM, выходной аудио-интерполятор и TX reference пока не готовы; спектральные измерения ещё не выполнены.
 - Следующий блокирующий этап: получить bit-exact AVR reference для Hilbert overrange arithmetic и закрыть ISR/ADC aperture timing; затем подключить startup timing к полному RX harness, завершить NR/IIR и аудиовыход, после этого построить TX reference.
 
 ## Правила
