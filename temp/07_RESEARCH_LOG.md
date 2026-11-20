@@ -132,3 +132,13 @@
 - CW filters 4..7 и AM/FM не аппроксимируются: остаются явным NotImplementedError.
 - Добавлены post integration tests и full-chain config test. В этом исследовательском окружении полный unittest suite не запускался; отдельные NR/IIR recurrence and post-stage assertions проверены вручную по тем же формулам.
 - Полная карта и ограничения: temp/15_RX_REFERENCE_PIPELINE.md; NR/IIR детали: temp/18_RX_POST_NR_IIR.md.
+
+
+### RX SSB IIR range audit — 2026-11-20
+- Добавлена wide-intermediate диагностика audit_ssb_iir_intermediates() в temp/reference/rx_numeric_audit.py; она повторяет source recurrence SSB filt=1..3 и записывает максимум каждого промежуточного узла, а также первый индекс превышения signed int16.
+- Вектор: 2.5 kHz sine, fs=7812.5 Hz, amplitude512, 5000 samples. Общий prefilter sum достигает37315 во всех трёх фильтрах; filt=1 stage-2 feedback sum достигает43357. Оба значения выше 32767.
+- Контрольный vector: 3.9 kHz, amplitude128, 5000 samples — все перечисленные промежуточные значения остаются в signed int16 для filt1..3.
+- SSB IIR вызывается до финального clip [-512,511]; volume range допускает отсутствие attenuation (agc=1,volume=16) или left shift при agc!=1,volume=14..16. Поэтому итоговый output clip не гарантирует безопасные intermediate values.
+- Добавлены два test cases в test_rx_numeric_audit.py: reachable wide-trajectory overrange и low-amplitude in-range vector.
+- Это анализ mathematical wide trajectory. После первого signed overflow фактический AVR-GCC state/output может разойтись; AVR probe/golden values пока не получены.
+- Подробный отчёт: temp/18_RX_POST_NR_IIR.md; общая численная карта: temp/17_RX_NUMERIC_RANGE.md.
