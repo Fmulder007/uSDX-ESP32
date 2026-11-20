@@ -12,6 +12,8 @@
 - `test_rx_numeric_audit.py` — CIC DC gain/границы и воспроизводимый full-scale 650 Hz Hilbert overrange test.
 - `rx_nr.py` — integer EMA smoother, используемый в slow_dsp() при NR=1…8.
 - `test_rx_nr.py` — тесты passthrough, EMA step response, truncation deadband и persistent NR state.
+- `rx_iir.py` — wide-intermediate SSB filters 1..3 recurrence model; не AVR bit-exact и не CW.
+- `test_rx_iir.py` — impulse golden vectors, zero-input stability, bypass freeze и state carry-over.
 - `avr_hilbert_probe.c` / `avr_hilbert_probe.md` — standalone probe для фактического AVR-GCC результата signed-overflow expression и wide comparison.
 - `rx_cic.py` — активный восьмифазный RX CIC из NEW_RX=1; выдаёт сырые пары до att2.
 - `test_rx_cic.py` — проверка расписания функций против прямой каскадной формулы.
