@@ -1,4 +1,4 @@
-"""Source-compatible RX Hilbert/I-delay stage from PE1NNZ uSDX NEW_RX.
+"""Wide-intermediate RX Hilbert/I-delay baseline for PE1NNZ uSDX NEW_RX.
 
 Source snapshot:
     threeme3/usdx @ bf8acd31b8a2506c4e1d203dfb283feecae947e1
@@ -11,6 +11,8 @@ The model applies att2, then reproduces:
 
 The current undelayed I/Q values are also returned because slow_dsp()
 uses the global I/Q values for its AM/FM branches.
+
+This model preserves source expression order and C-style division truncation, but Python intermediates are unbounded. A reachable full-scale 650 Hz test exceeds signed int16 in the third Hilbert numerator; this is not a bit-exact AVR arithmetic model. See rx_numeric_audit.py and ../17_RX_NUMERIC_RANGE.md.
 
 This model does not implement slow_dsp(), AGC, NR, IIR or audio output.
 """
