@@ -199,3 +199,5 @@ TIMER2_COMPA_vect выполняет func_ptr().
 В новом коде желательно иметь отдельные структуры RxDspState, TxDspState, AudioOutState и DspConfig. Конкретную раскладку полей утвердить после reference harness.
 
 Источники: [RX state and processing](https://github.com/threeme3/usdx/blob/bf8acd31b8/usdx.ino#L2418-L2430), [slow_dsp/AGC/NR](https://github.com/threeme3/usdx/blob/bf8acd31b8/usdx.ino#L2420-L2665), [active CIC and process](https://github.com/threeme3/usdx/blob/bf8acd31b8/usdx.ino#L2741-L2880), [TX SSB](https://github.com/threeme3/usdx/blob/bf8acd31b8/usdx.ino#L1920-L2078), [IIR filters](https://github.com/threeme3/usdx/blob/bf8acd31b8/usdx_filter.h#L45-L135).
+
+Подробная матрица cold start / RX resume / TX state и reset semantics: [12_STATE_LIFECYCLE.md](12_STATE_LIFECYCLE.md).
