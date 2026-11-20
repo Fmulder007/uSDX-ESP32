@@ -37,7 +37,7 @@
 - [x] Подключить ADC mux/read-previous порядок и midpoint interpolation I к SSB chain: temp/reference/rx_ssb_adc_chain.py.
 - [x] Проверить isolated Hilbert response и полный steady-state ADC midpoint → CIC → Hilbert image-rejection path: I midpoint interpolation создаёт Q/I gain mismatch; isolated 27 dB at3400Hz нельзя считать результатом полного тракта. Полный source chain дал minimum около30.67 dB near3150Hz в текущей идеальной модели. См. temp/19_RX_HILBERT_IMAGE_REJECTION.md.
 - [x] Подготовить плоские 19- и 23-tap Q15 Hilbert prototypes; полный тракт показал, что они не являются drop-in replacements: temp/20_RX_HILBERT_CANDIDATES.md.
-- [x] Подготовить 23- и 27-tap Q15 Hilbert alternatives, компенсирующие I midpoint average. Полная steady-state модель дала minimum IRR около46.29/53.20 dB в sweep 650…3400 Hz с шагом50 Hz: temp/21_RX_HILBERT_CIC_COMPENSATION.md.
+- [x] Подготовить и сравнить CIC-компенсированные Q15 Hilbert candidates. Minimax19 taps — minimum IRR47.69dB, minimax21 —50.31dB; 17 taps не достигают43dB; LS23/27 сохранены как дополнительные варианты. Полная таблица и sweep: temp/21_RX_HILBERT_CIC_COMPENSATION.md.
 - [ ] Уточнить sample-and-hold aperture/startup и analog mismatch, затем повторить full-chain Hilbert tests с измеренными/обоснованными параметрами.
 - [ ] Получить эталонный результат на синусе/двухтональном тесте.
 - [ ] Проверить полярность USB/LSB и измерить подавление нежелательной боковой полосы.
