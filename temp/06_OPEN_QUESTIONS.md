@@ -60,3 +60,6 @@
 - Numerics: wide intermediate math / AVR-compatible arithmetic / documented fixed-point design.
 
 Ни один из вариантов пока не объявлен окончательным.
+- [ ] Сверить комментарий исходника о 12 dB CIC gain с фактическим коэффициентным масштабом активной реализации и att2.
+- [x] Разложить восемь фаз активного CIC в таблицу и вывести эквивалентную R=4/N=3 передаточную функцию.
+- [x] Рассчитать номинальные ADC prescaler/steady-state conversion timings для стандартного F_MCU=20 MHz; точную sample-and-hold временную привязку ещё проверить.
