@@ -98,11 +98,17 @@ att2 по умолчанию равен 2, но это не жёсткий ми�
 
 Probe намеренно требует AVR target и проверяет sizeof(int) через INT_MAX. Его результат пока не получен: в текущем исследовательском окружении AVR-GCC отсутствует. Инструкция сохранена, чтобы следующий запуск не требовал повторно восстанавливать входной вектор и формулу.
 
-## 7. SSB IIR: отдельный reachable overrange
+## 7. NR: разность до деления может выйти за int16
+
+Для recurrence process_nr() проверен искусственный full-range transition [-32767,+32767]. При NR=8 после первого sample состояние становится -255; следующий delta равен 33022. При NR=1 delta равен 65534. Оба значения выше signed int16 до деления. Python NR model выполняет эту разность в wide integer и потому описывает математическую recurrence, а не фактический AVR overflow.
+
+Добавлены audit_nr_deltas() и тесты, а также target probe reference/avr_nr_probe.cpp. Подробности: [18_RX_POST_NR_IIR.md](18_RX_POST_NR_IIR.md).
+
+## 8. SSB IIR: отдельный reachable overrange
 
 Диапазонный аудит SSB IIR вынесен в подробный разбор [18_RX_POST_NR_IIR.md](18_RX_POST_NR_IIR.md). Для входа filt_var() — синус 2,5 kHz с амплитудой 512 при fs=7812,5 Hz — общая prefilter sum достигает 37315 во всех трёх SSB-фильтрах. У filt=1 отдельное умножение 18*zc1 достигает 46980, а stage-2 feedback sum — 43357. Использована wide Python recurrence; AVR result after signed overflow remains unknown. Это показывает, что numeric compatibility issue затрагивает не только Hilbert, но и активный SSB IIR.
 
-## 8. Исходные участки
+## 9. Исходные участки
 
 - R=4 и комментарий 12 dB: https://github.com/threeme3/usdx/blob/bf8acd31b8/usdx.ino#L2701-L2716
 - Активная CIC-цепочка и M_SR=1: https://github.com/threeme3/usdx/blob/bf8acd31b8/usdx.ino#L2825-L2838
