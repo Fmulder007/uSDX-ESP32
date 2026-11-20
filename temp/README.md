@@ -36,7 +36,6 @@
 | 14_RX_SSB_POST.md | Базовая SSB-ветка slow_dsp: fast AGC, volume и clipping |
 | 15_RX_REFERENCE_PIPELINE.md | Состав, интерфейс, границы и запуск частичного RX reference pipeline |
 | reference/ | CIC, Hilbert/I delay, частичный RX pipeline и SSB post-processing модели с тестами |
-| [reference/](reference/) | Исполняемые host-side модели и тесты отдельных DSP-блоков |
 
 ## Как читать материалы
 
