@@ -1,6 +1,6 @@
 # Candidate Hilbert FIRs for the 650…3400 Hz RX band
 
-**Status:** two experimental filters designed, Q15-quantized and checked with time-domain image-rejection tests. The active PE1NNZ 15-tap filter is unchanged.
+**Status:** two flat-gain experimental Hilbert filters designed, Q15-quantized and tested in isolation. A later full-chain test showed they are not suitable as drop-in replacements because the source I midpoint average creates a Q/I gain mismatch which the original filter partly compensates. The active PE1NNZ 15-tap filter is unchanged.
 
 ## 1. Design target and method
 
@@ -11,7 +11,7 @@
 - Coefficient sign was chosen to preserve the current source Hilbert polarity.
 - The matching I delay is the FIR group delay (N-1)/2.
 
-The current 15-tap filter is not a Remez optimum for this band. Its isolated FIR image rejection is approximately 27.36 dB at 3400 Hz using the real 7812.5 SPS rate. The candidate designs seek to meet the source comment's 43 dB target across the full band.
+These designs optimize an isolated, equal-amplitude I/Q Hilbert block. That is useful for understanding the FIR itself, but it is not the source's complete image-rejection scenario: the upstream I midpoint interpolator changes I amplitude with frequency. See 19_RX_HILBERT_IMAGE_REJECTION.md for the complete ADC-input → CIC → Hilbert comparison, and 21_RX_HILBERT_CIC_COMPENSATION.md for filters designed against that real input-path mismatch.
 
 ## 2. Candidate results
 
@@ -24,7 +24,7 @@ All candidate values below use quantized Q15 coefficients and truncation toward 
 | **Candidate A** | **19** | **9** | **9** | **+2 pairs** | **47.80 dB** | **47.11 dB** |
 | Candidate B | 23 | 11 | 11 | +4 pairs | 55.64 dB | 54.20 dB |
 
-Candidate A is the smallest tested filter with useful margin above 43 dB after Q15 quantization. Candidate B provides roughly 7 dB more margin at the cost of two additional pair-products and two more samples of delay.
+In isolation, Candidate A and Candidate B meet the target comfortably. **They are not recommended for direct substitution in the uSDX RX path.** The full-chain comparison shows that flattening Hilbert amplitude can reduce image rejection at parts of the band because it removes compensation for the I midpoint average. Use these flat candidates as FIR reference experiments only.
 
 Time-domain test setup: I=cos(2πfn/fs), Q=±sin(2πfn/fs), 1000-count amplitude, 8192 samples, first 256 discarded. IRR is the ratio of the two output RMS levels. This is an isolated quadrature-stage test, not an end-to-end RF performance measurement.
 
@@ -56,7 +56,7 @@ Group delay: **11 I/Q pairs** (about 1.408 ms).
 - Worst-case accumulator bound for arbitrary signed-int16 input samples: 2,095,678,230, which fits signed int32 (margin 51,805,417).
 - At default att2=2, bound is 261,963,776.
 
-## 5. Implementation and evaluation notes
+## 5. Scope correction after the full-chain test
 
 reference/rx_hilbert_candidates.py contains both candidate coefficient sets and a stateful test model. It:
 - applies att2 before the Hilbert FIR;
@@ -66,10 +66,5 @@ reference/rx_hilbert_candidates.py contains both candidate coefficient sets and 
 
 The model is not the production ESP32 implementation. For a C++ port, use a signed int32 accumulator for these two candidate tables with the stated input range, and retain the exact Q15 coefficients. Do not shorten or re-order the accumulation without rerunning tests.
 
-Remaining checks before choosing either candidate:
-1. run the full CIC → Hilbert chain at 7812.5 SPS, with startup and amplitude scaling included;
-2. compare real I/Q gain and phase mismatch, not only ideal quadrature;
-3. examine audio response and group-delay effects in CW/SSB modes;
-4. profile ESP32 cycles and compare the 19-tap vs 23-tap versions;
-5. only then decide whether to replace the current 15-tap baseline.
+The full steady-state CIC + Hilbert check is now available in 19_RX_HILBERT_IMAGE_REJECTION.md. It shows that a replacement should target the amplitude response introduced by I midpoint interpolation. The compensated 23/27-tap candidates are documented separately in 21_RX_HILBERT_CIC_COMPENSATION.md. Remaining checks are exact ADC aperture/startup, analog I/Q mismatch, SSB/USB/LSB audio response, and ESP32 cycle profiling. No active filter has been changed.
 
