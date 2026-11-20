@@ -29,6 +29,7 @@
 | 07_RESEARCH_LOG.md | Хронология исследований и уточнений |
 | 08_RX_CIC_PHASES.md | Точное восьмифазное расписание CIC и эквивалентная передаточная функция |
 | 09_ADC_TIMING.md | Настройка ADC, чередование I/Q, OCR timing и конвейер TX |
+| 10_DSP_INTERFACE_DRAFT.md | Черновик API DSP_RX/DSP_TX и варианты sample/block input |
 
 ## Как читать материалы
 
