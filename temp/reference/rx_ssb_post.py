@@ -1,17 +1,23 @@
-"""Source-compatible baseline SSB slow_dsp() post-processing.
+"""Partial source-compatible SSB slow_dsp() post-processing reference.
 
-Scope:
+Implements:
 - USB/LSB/CW path (no AM/FM demodulation);
-- FAST_AGC compile option disabled;
+- selected build with FAST_AGC compile option disabled;
 - agc == 1: process_agc_fast();
-- nr == 0 and filt == 0;
-- volume scaling and final -512..511 clamp.
+- volume scaling;
+- NR=0..8 exponential smoother;
+- SSB filt=0..3 IIR path;
+- final -512..511 clamp.
 
-Unsupported paths raise NotImplementedError rather than silently approximating
-NR, IIR filters, AM or FM.
+All DSP stages are reference models. NR and IIR use wide Python intermediates;
+they are not a bit-exact AVR signed-overflow emulator. CW IIR filters 4..7 and
+AM/FM demodulation remain unsupported.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+
+from rx_iir import RxSsbIirState
+from rx_nr import RxNrState
 
 
 INT16_MIN = -32768
@@ -19,16 +25,18 @@ INT16_MAX = 32767
 
 
 def wrap_i16(value: int) -> int:
-    """Wrap to signed 16-bit as observed on the AVR target."""
+    """Wrap to signed 16-bit at the existing baseline input/AGC boundaries."""
     value &= 0xFFFF
     return value if value < 0x8000 else value - 0x10000
 
 
 @dataclass
 class RxSsbPostState:
-    """Persistent state for the default SSB post-processing path."""
+    """Persistent state for baseline AGC plus optional NR and SSB IIR."""
 
     gain: int = 1024
+    nr_state: RxNrState = field(default_factory=RxNrState)
+    iir_state: RxSsbIirState = field(default_factory=RxSsbIirState)
 
     def process(
         self,
@@ -40,15 +48,15 @@ class RxSsbPostState:
         filt: int = 0,
         mode: str = "USB",
     ) -> int:
-        """Process one demodulated SSB sample through baseline slow_dsp()."""
+        """Process one demodulated sample through the supported SSB path."""
         if mode not in ("USB", "LSB", "CW"):
             raise NotImplementedError("AM/FM demodulation is not in this model")
-        if nr != 0:
-            raise NotImplementedError("NR is not in this model")
-        if filt != 0:
-            raise NotImplementedError("IIR filtering is not in this model")
         if not 0 <= volume <= 16:
             raise ValueError("volume must be in the source range 0..16")
+        if not 0 <= nr <= 8:
+            raise ValueError("NR must be in the source range 0..8")
+        if filt not in (0, 1, 2, 3):
+            raise NotImplementedError("CW IIR filters 4..7 are not yet modeled")
 
         ac = wrap_i16(audio_input)
 
@@ -72,5 +80,9 @@ class RxSsbPostState:
                 ac = ac >> (13 - volume)
             else:
                 ac = wrap_i16(ac << (volume - 13))
+
+        # Source order: NR after AGC/volume, then optional filt_var().
+        ac = self.nr_state.push(ac, nr)
+        ac = self.iir_state.push(ac, filt)
 
         return min(max(ac, -512), 511)
