@@ -83,3 +83,10 @@
 - Зафиксирован signed arithmetic shift: +100>>10=0, -100>>10=-1; gain update может быть sign-asymmetric.
 - AM/FM, NR и IIR намеренно не моделируются и вызывают NotImplementedError.
 - В исходном меню VOLUME имеет диапазон -1..16; -1 — команда powerDown, рабочая модель принимает 0..16.
+### ADC input adapter и сквозная timer-event SSB chain — 2026-11-20
+- Добавлен temp/reference/rx_adc_input.py: на каждом Timer2 event он выбирает MUX для следующей конверсии, возвращает результат предыдущей, повторяет I midpoint interpolation с signed division truncation toward zero.
+- Startup ADC register value вынесен в параметр: исходник после start_rx() явно не запускает первую конверсию, поэтому значение первого ADC read не гарантируется нулём.
+- Добавлены тесты канального порядка I/Q, startup register value и midpoint I interpolation.
+- Добавлен temp/reference/rx_ssb_adc_chain.py, который соединяет ADC input adapter → CIC → att2/Hilbert/I delay → baseline SSB fast AGC/volume/clipping.
+- Полная программная timer-event модель теперь начинается с analog I/Q values, доступных для conversion start на каждом событии; точное sample-and-hold aperture, acquisition settling и jitter внутри conversion пока не моделируются.
+- Исправлен integration test ожидания i_s0za1: на фазе 6 обновляется odd history, а последнее i_s0za1 было записано на фазе 4.
