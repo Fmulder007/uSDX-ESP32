@@ -37,4 +37,6 @@
 - выходная аудио-интерполяция.
 
 Набор содержит несколько отдельных моделей и одну сквозную частичную SSB-цепочку. Для CIC расписание сверяется с прямой двухступенчатой формулой; для Hilbert/I-delay есть impulse/delay tests; для ADC input есть MUX/read-previous и I interpolation tests; для slow_dsp есть AGC/volume/clipping tests. Все эти ступени соединены в rx_ssb_adc_chain.py. Аудио-интерполятор, NR/IIR, AM/FM и спектральные тесты пока не готовы.
-\n## Startup timing caveat\n\nrx_adc_timing.py выявляет startup-последовательность после ADEN. rx_adc_input.py и rx_ssb_adc_chain.py пока остаются абстракцией установившегося логического потока и не используют эту startup-модель. Точная задержка ISR до ADSC, фаза ADC prescaler и analog acquisition/settling требуют отдельного уточнения. См. ../16_RX_ADC_STARTUP_TIMING.md.\n
+\n## Startup timing caveat
+
+rx_adc_timing.py выявляет startup-последовательность после ADEN. rx_adc_input.py и rx_ssb_adc_chain.py пока остаются абстракцией установившегося логического потока и не используют эту startup-модель. Точная задержка ISR до ADSC, фаза ADC prescaler и analog acquisition/settling требуют отдельного уточнения. См. ../16_RX_ADC_STARTUP_TIMING.md.
