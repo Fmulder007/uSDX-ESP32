@@ -142,3 +142,10 @@
 - Добавлены два test cases в test_rx_numeric_audit.py: reachable wide-trajectory overrange и low-amplitude in-range vector.
 - Это анализ mathematical wide trajectory. После первого signed overflow фактический AVR-GCC state/output может разойтись; AVR probe/golden values пока не получены.
 - Подробный отчёт: temp/18_RX_POST_NR_IIR.md; общая численная карта: temp/17_RX_NUMERIC_RANGE.md.
+
+
+### AVR IIR probe подготовлен — 2026-11-20
+- Добавлены temp/reference/avr_iir_probe.c и avr_iir_probe.md.
+- Probe содержит 25-sample periodic table для 2.5 kHz / amplitude512 / fs7812.5Hz; запускает по 5000 samples для каждого SSB filter 1..3.
+- Сравнивает source-style int16 state/expressions под pragma GCC optimize("Ofast") и explicit int32 wide model; выводит volatile checksum и конечные state arrays.
+- Probe не собирался: AVR-GCC в текущем исследовательском окружении отсутствует. На будущее требуется сохранить `avr-gcc --version`, flags, disassembly и значения всех checksum/state.
