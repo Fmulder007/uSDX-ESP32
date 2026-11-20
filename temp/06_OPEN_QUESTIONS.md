@@ -32,9 +32,11 @@
 - [x] Подготовлена отдельная reference-модель базового SSB slow_dsp (fast AGC/volume/clipping, nr=0/filt=0): temp/reference/rx_ssb_post.py.
 - [x] Соединить CIC → Hilbert/I delay → базовый SSB slow_dsp в частичный stateful pipeline: temp/reference/rx_ssb_chain.py.
 - [x] Подключить ADC mux/read-previous порядок и midpoint interpolation I к SSB chain: temp/reference/rx_ssb_adc_chain.py.
+- [x] Разобрать активный NR: это integer EMA smoother с уровнями N=1…128, truncation-to-zero deadband и одним static state; добавить reference model/tests: temp/18_RX_POST_NR_IIR.md и temp/reference/rx_nr.py.
 - [ ] Получить эталонный результат на синусе/двухтональном тесте.
 - [ ] Проверить полярность USB/LSB и измерить подавление нежелательной боковой полосы.
 - [ ] Определить спецификацию выхода RX DSP: sample rate, format, latency.
+- [ ] Проверить скачок/звон после переключения filt, bypass/re-enable и mode; static IIR histories не сбрасываются фильтровым обработчиком.
 
 ## 3. TX — вопросы
 
@@ -65,7 +67,7 @@
 2. Закрыть временную модель ADC: определить ISR-to-ADSC offsets, ADC prescaler phase и I/Q aperture; analog acquisition/settling — отдельным измерением.
 3. Установить фактическую AVR-GCC арифметику Hilbert на overrange vector: получить точные flags/disassembly и сравнить реальный результат с wide и wrap кандидатами.
 4. Подключить startup timing model к полному RX reference harness и подготовить фиксированные синусоидальные/двухтональные векторы с промежуточными контрольными точками.
-5. Добавить NR и IIR с явными состояниями в отдельные RX post blocks; AM/FM — отдельными ветвями.
+5. Добавить IIR integer reference с точной AVR width audit и response tests; AM/FM — отдельными ветвями. NR recurrence уже выделена, но пока не подключена к сквозному SSB harness.
 6. Подготовить аналогичную модель SSB TX, включая integer atan2 macro semantics, MAX_DP и ADC pipeline.
 7. Проверить и уточнить API из temp/10_DSP_INTERFACE_DRAFT.md по результатам reference harness.
 8. Только после этого начинать перенос на ESP32.
