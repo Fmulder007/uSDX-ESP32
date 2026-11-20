@@ -1,7 +1,6 @@
 """Tests for RX CIC gain and Hilbert intermediate-width diagnostics."""
 
 import math
-import random
 import unittest
 
 from rx_cic import RxCicState
