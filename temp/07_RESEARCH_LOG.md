@@ -204,3 +204,11 @@
 - Q15 magnitude error to compensation target: max abs0.068dB (19),0.050dB (21). Full-int16 accumulator exact endpoint-difference bounds:2,007,074,910 (19),1,966,836,420 (21); both fit signed int32.
 - Updated rx_hilbert_cic_compensation.py with minimax17/19/21 sets; extended test module and repeatable rx_hilbert_cic_sweep.py to cover source15 + all candidates.
 - Preliminary selection is now 19 taps as the lowest-cost candidate meeting43dB; 21 taps is the higher-margin option. Active source coefficients remain unchanged.
+
+
+### Hilbert Q aperture-skew sensitivity — 2026-11-20
+- В full-chain ideal model добавлен synthetic Q-only time offset, выраженный в cycles source CPU=20.007MHz. Это стресс-проверка, не измерение реального ADC/ISR skew.
+- На3400Hz: Minimax19 IRR48.16dB при0 cycles,43.53dB при10 cycles (~0.612°),42.53dB при12 cycles (~0.734°).
+- Minimax21:50.87dB при0,44.31dB при10 cycles,43.10dB при12,41.93dB при14.
+- Следствие: даже 19/21-tap coefficients нельзя окончательно выбирать без оценки ISR-to-ADSC delay difference и actual sample-and-hold aperture. 21 taps gives a little more phase-skew margin.
+- Обновлены test_rx_hilbert_cic_compensation.py (q_phase_deg stress case) и rx_hilbert_cic_sweep.py (--q-skew-cycles CLI option).
