@@ -38,6 +38,7 @@
 | 16_RX_ADC_STARTUP_TIMING.md | Первая 25-тактовая ADC-конверсия, startup I/Q сдвиг и цикл-тактовая модель |
 | 17_RX_NUMERIC_RANGE.md | Диапазоны CIC, gain R=4, Hilbert int16 overrange и план проверки AVR arithmetic |
 | 18_RX_POST_NR_IIR.md | Реальная последовательность slow_dsp, NR integer EMA/deadband, IIR sections и state lifecycle |
+| reference/rx_nr.py и rx_iir.py | Отдельные NR и SSB IIR reference models с тестами |
 | reference/ | CIC, Hilbert/I delay, частичный RX pipeline и SSB post-processing модели с тестами |
 
 ## Как читать материалы
