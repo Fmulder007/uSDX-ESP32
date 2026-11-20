@@ -23,10 +23,11 @@
 
 ## Ограничение текущей модели
 
-Частичный сквозной RX pipeline CIC → Hilbert/I-delay уже соединён в rx_chain.py. Он принимает выборки, уже распределённые по логическим I/Q-каналам. Пока не моделируются:
+Частичный сквозной RX pipeline CIC → Hilbert/I-delay уже соединён в rx_chain.py. Отдельная rx_ssb_post.py моделирует только базовую SSB-постобработку (fast AGC, volume, clipping) при nr=0 и filt=0. Пока не моделируются:
 - переключение ADMUX и конвейер ADC register read;
 - интерполяция I из соседних ADC отсчётов;
-- slow_dsp(): demod, AGC, NR и IIR;
+- объединение rx_chain.py с rx_ssb_post.py в единый stateful RX pipeline;
+- NR, IIR, AM/FM ветви;
 - выходная аудио-интерполяция.
 
-Модель намеренно ограничена одним блоком: CIC. Для CIC выполнено сравнение восьмифазного расписания с прямой двухступенчатой формулой. Для Hilbert/I-delay есть impulse и delay tests. Частичный CIC→Hilbert pipeline соединён; полный RX pipeline пока не готов.
+Модель намеренно ограничена одним блоком: CIC. Для CIC выполнено сравнение восьмифазного расписания с прямой двухступенчатой формулой. Для Hilbert/I-delay есть impulse и delay tests. Для базового SSB post есть AGC/volume/clipping tests. Частичный CIC→Hilbert pipeline соединён; полный RX pipeline пока не готов.
