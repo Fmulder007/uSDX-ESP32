@@ -25,8 +25,8 @@
 - `test_rx_ssb_chain.py` — интеграционные проверки SSB subset.
 - `rx_ssb_adc_chain.py` — подключает ADC mux/read-previous и I interpolation перед всей доступной SSB-цепочкой.
 - `test_rx_ssb_adc_chain.py` — интеграционные проверки входного ADC pipeline.
-- `rx_ssb_post.py` — baseline SSB post-processing: fast AGC, volume, clipping.
-- `test_rx_ssb_post.py` — тесты AGC state, signed shift, volume и clipping.
+- `rx_ssb_post.py` — SSB post-processing: fast AGC, volume, optional NR EMA, optional SSB IIR 1..3, clipping.
+- `test_rx_ssb_post.py` — тесты AGC state, signed shift, volume, NR/IIR integration и clipping.
 
 
 ## Запуск на Windows
@@ -39,14 +39,15 @@
 
 ## Ограничение текущей модели
 
-Частичный сквозной RX SSB pipeline с ADC MUX/read-previous и I midpoint interpolation соединён в rx_ssb_adc_chain.py. Вход — аналоговые I/Q значения, доступные для старта conversion на каждом Timer2 event. Пока не моделируются:
+Частичный сквозной RX SSB pipeline с ADC MUX/read-previous, I midpoint interpolation, CIC, Hilbert/I-delay, AGC/volume, optional NR и SSB IIR 1..3 соединён в rx_ssb_adc_chain.py. Параметры nr=0..8 и filt=0..3 передаются через цепочку; defaults nr=0/filt=0 сохраняют прежнее поведение. Пока не моделируются:
 - точный sample-and-hold aperture и acquisition/settling time внутри conversion;
-- фактическое AVR-GCC поведение signed-overflow в Hilbert; rx_quadrature.py остаётся wide-intermediate mathematical baseline;
-- NR и IIR ветви;
+- startup 25-cycle ADC conversion timing внутри полной event-level chain (есть отдельный rx_adc_timing.py);
+- фактическое AVR-GCC поведение signed-overflow в Hilbert/IIR/NR; rx_quadrature.py и rx_iir.py остаются wide-intermediate baselines;
+- CW IIR filters 4..7;
 - AM/FM demodulation;
 - выходная аудио-интерполяция.
 
-Набор содержит несколько отдельных моделей и одну сквозную частичную SSB-цепочку. Для CIC расписание сверяется с прямой двухступенчатой формулой; для Hilbert/I-delay есть impulse/delay tests; для ADC input есть MUX/read-previous и I interpolation tests; для slow_dsp есть AGC/volume/clipping tests. Все эти ступени соединены в rx_ssb_adc_chain.py. Аудио-интерполятор, NR/IIR, AM/FM и спектральные тесты пока не готовы.
+Набор содержит несколько отдельных моделей и одну сквозную частичную SSB-цепочку. Для CIC есть сравнение расписания с прямой двухступенчатой формулой; для Hilbert/I-delay — impulse/delay tests; для ADC input — MUX/read-previous и I interpolation tests; для NR — EMA/deadband/state tests; для SSB IIR — impulse, bypass и state-carry-over tests; для slow_dsp — AGC/volume/clipping tests. Эти поддерживаемые ступени соединены в rx_ssb_adc_chain.py. Полный AVR-GCC golden comparison, startup aperture, аудио-интерполятор, CW/AM/FM и спектральные тесты ещё не завершены.
 
 ## Startup timing caveat
 
