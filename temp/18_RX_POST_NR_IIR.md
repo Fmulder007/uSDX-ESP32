@@ -186,7 +186,7 @@ CW branch использует другую пару biquad секций, зат
 - Проверить скачок/звон после переключения filt, bypass/re-enable и mode.
 - Проверить, влияет ли 600 Hz CW active branch / disabled 700 Hz alternative на желаемую конфигурацию переноса. При FILTER_700HZ выключенном условная ветка cw_tone==0 исключается препроцессором, поэтому в filt_var() основной 600-Hz block выполняется независимо от cw_tone.
 
-## 9. Исходные участки кода
+## 10. Исходные участки кода
 
 - process_nr(), slow_dsp() и EA() macro:
   https://github.com/threeme3/usdx/blob/bf8acd31b8/usdx.ino#L2156-L2157
@@ -200,6 +200,6 @@ CW branch использует другую пару biquad секций, зат
 - Filter state menu transition:
   https://github.com/threeme3/usdx/blob/bf8acd31b8/usdx.ino#L5273-L5305
 
-## 9. Интеграция в partial SSB chain
+## 11. Интеграция в partial SSB chain
 
 RxSsbPostState теперь вызывает stages в source order: AGC/volume → NR EMA → selected SSB IIR → final clip. RxSsbReferencePipeline и RxSsbAdcReferencePipeline передают nr и filt параметры до post stage. При nr=0/filt=0 прежний baseline remains unchanged. Поддерживаемый диапазон пока USB/LSB common SSB filter branch: NR 0..8 и filt 0..3. CW IIR 4..7, AM/FM и AVR signed-overflow emulation не входят в эту модель. Startup ADC timing analysis остаётся отдельной моделью; полный event chain пока использует идеализированную steady-state ADC input abstraction.
