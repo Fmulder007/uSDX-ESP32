@@ -36,6 +36,8 @@
 - [x] Рассчитать номинальное ADC conversion timing из adc_start() и prescaler.
 - [ ] Проверить фактическую sample-and-hold привязку и интервалы чтения ADC; в MULTI_ADC чтения разнесены по времени PLL I2C и вычислениями.
 - [ ] Проверить диапазоны I/Q Hilbert, magnitude approximation, atan approximation и phase delta.
+- [x] Вывести таблицу _UA/MAX_DP и зафиксировать phase slew limiter с переносом остатка: temp/13_TX_PHASE_SCALING.md.
+- [ ] Измерить спектральное влияние MAX_DP и проверить знак/alias поведение dp около полного оборота.
 - [ ] Подготовить эталонные входы mic и выходы df/amp.
 - [ ] Отделить численный результат df от передачи PLL-регистров.
 - [ ] Уточнить допустимую задержку между вычислением и применением Si5351.
