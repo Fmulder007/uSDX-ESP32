@@ -33,7 +33,7 @@ static bool getGlyph(char ch, uint8_t glyph[5]) {
     case '6': { const uint8_t g[5] = {0x3C, 0x4A, 0x49, 0x49, 0x30}; memcpy(glyph, g, 5); return true; }
     case '7': { const uint8_t g[5] = {0x01, 0x71, 0x09, 0x05, 0x03}; memcpy(glyph, g, 5); return true; }
     case '8': { const uint8_t g[5] = {0x36, 0x49, 0x49, 0x49, 0x36}; memcpy(glyph, g, 5); return true; }
-    case '9': { const uint8_t g[5] = {0x06, 0x49, 0x29, 0x1E}; memcpy(glyph, g, 5); return true; }
+    case '9': { const uint8_t g[5] = {0x06, 0x49, 0x49, 0x29, 0x1E}; memcpy(glyph, g, 5); return true; }
 
     case 'C': { const uint8_t g[5] = {0x3E, 0x41, 0x41, 0x41, 0x22}; memcpy(glyph, g, 5); return true; }
     case 'D': { const uint8_t g[5] = {0x7F, 0x41, 0x41, 0x22, 0x1C}; memcpy(glyph, g, 5); return true; }
