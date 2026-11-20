@@ -188,3 +188,9 @@
 - Accumulator exact signed-int16 history bounds: 2,000,128,200 (23 taps) and2,059,044,165 (27 taps), both fit signed int32. For expected post-att2 ranges ±4096 these are250,019,840 and257,384,448.
 - Added rx_hilbert_cic_compensation.py and test_rx_hilbert_cic_compensation.py; five local focused checks passed: full-chain IRR at three frequencies for both candidates, I delay, target magnitude fit, accumulator bounds.
 - Recommendation for the next experiment: use23 taps as the low-cost candidate, retain27 as higher-margin alternative. Do not replace active source coefficients until ADC aperture/startup, analog mismatch, SSB audio response and ESP32 compute cost are checked.
+
+
+### Repeatable Hilbert full-chain sweep saved — 2026-11-20
+- Добавлен temp/reference/rx_hilbert_cic_sweep.py. Скрипт повторяет 650…3400Hz sweep с шагом50Hz для исходного 15-tap и CIC-compensated 23/27-tap вариантов.
+- Внутри каждого frequency point моделируются оба Q polarity, ADC input + I midpoint, original 8-phase CIC, Hilbert и matching I delay. Скрипт печатает CSV и минимальный IRR/частоту каждого варианта.
+- Это steady-state ideal chain; physical ADC aperture, settling, source startup and analog mismatch remain outside the model.
