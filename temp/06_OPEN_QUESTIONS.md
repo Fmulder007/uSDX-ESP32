@@ -58,10 +58,11 @@
 1. Завершить state inventory: назначение, момент обновления и reset/lifecycle каждой переменной.
 2. Закрыть временную модель ADC: pipeline, sample-and-hold и I/Q aperture.
 3. Разобрать и проверить масштабирование CIC, включая комментарий о 12 dB gain.
-4. Подготовить host-side reference model RX и контрольные сигналы.
-5. Подготовить аналогичную модель SSB TX и проверить фазовую шкалу.
-6. Зафиксировать интерфейс DSP_RX/DSP_TX и сравнить варианты вызова sample/block.
-7. Только после этого начинать перенос на ESP32.
+4. Расширить host-side RX reference model: ADC mux pipeline → I interpolation → CIC → Hilbert/I delay.
+5. Добавить slow_dsp: demod, AGC, NR и IIR с отдельными состояниями.
+6. Подготовить аналогичную модель SSB TX, включая integer atan2 macro semantics, MAX_DP и ADC pipeline.
+7. Проверить и уточнить API из temp/10_DSP_INTERFACE_DRAFT.md по результатам reference harness.
+8. Только после этого начинать перенос на ESP32.
 
 ## 6. Варианты, которые нужно сохранить для сравнения
 
