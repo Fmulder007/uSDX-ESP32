@@ -71,7 +71,9 @@ rx_ssb_chain.py остаётся отдельной нижней обёртко�
 
 ## 4. Выход
 
-Параметры nr=0..8 и filt=0..3 передаются через RxSsbReferencePipeline и RxSsbAdcReferencePipeline. По умолчанию nr=0/filt=0, поэтому старое baseline поведение сохраняется. CW filters 4..7 не включены.\n\nКаждый готовый output содержит:
+Параметры nr=0..8 и filt=0..3 передаются через RxSsbReferencePipeline и RxSsbAdcReferencePipeline. По умолчанию nr=0/filt=0, поэтому старое baseline поведение сохраняется. CW filters 4..7 не включены.
+
+Каждый готовый output содержит:
 - текущие масштабированные I и Q;
 - задержанный I;
 - Hilbert Q;
