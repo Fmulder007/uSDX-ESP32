@@ -22,12 +22,13 @@
 ## 2. RX — вопросы
 
 - [x] Развернуть все восемь фаз CIC в таблицу входов/регистров/выходов: temp/08_RX_CIC_PHASES.md.
-- [ ] Сверить комментарий исходника о 12 dB CIC gain с коэффициентным масштабом активной реализации и att2.
+- [x] Сверить коэффициентный масштаб CIC: raw DC gain 32, после default att2=2 — 8; smeter() использует R*8=32. Комментарий 12 dB не является общим DC scaling коэффициентом; авторский смысл комментария остаётся неустановленным.
 - [x] Смоделировать логическую привязку I/Q к timer event, first ADC register read и read-previous/start-next pipeline: temp/reference/rx_adc_input.py.
 - [ ] Уточнить абсолютную sample-and-hold привязку к Timer2 и разницу задержек I/Q ISR до ADSC; затем отдельно измерить acquisition/settling и jitter.
 - [x] Зафиксировать наблюдаемое source reset поведение CIC/Hilbert/AGC/IIR при cold start и TX→RX: temp/12_STATE_LIFECYCLE.md.
 - [ ] Проверить переходные процессы cold start, TX→RX и повторного TX на эталонных сигналах.
-- [ ] Проверить диапазон промежуточных значений CIC и Hilbert.
+- [x] Доказать диапазоны активной CIC для ADC domain [-511,512]: raw output [-16352,16384], без int16 overflow; DC gain 32 до att2 и 8 при default att2=2. См. temp/17_RX_NUMERIC_RANGE.md.
+- [ ] Установить фактическое AVR-GCC поведение signed overflow в Hilbert: full-scale 650 Hz test при att2=2 создаёт третий числитель 34915; сравнить AVR disassembly/output с wide и wrap кандидатами.
 - [x] Подготовлена отдельная reference-модель базового SSB slow_dsp (fast AGC/volume/clipping, nr=0/filt=0): temp/reference/rx_ssb_post.py.
 - [x] Соединить CIC → Hilbert/I delay → базовый SSB slow_dsp в частичный stateful pipeline: temp/reference/rx_ssb_chain.py.
 - [x] Подключить ADC mux/read-previous порядок и midpoint interpolation I к SSB chain: temp/reference/rx_ssb_adc_chain.py.
