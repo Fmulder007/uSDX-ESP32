@@ -10,7 +10,7 @@ def _get(values, index):
     return values[index] if 0 <= index < len(values) else 0
 
 
-def direct_i_cic(samples, att2=2):
+def direct_i_cic(samples):
     """Direct two-stage decimate-by-2 reference, I phase."""
     stage1 = []
     for n in range(0, len(samples), 2):
@@ -30,11 +30,11 @@ def direct_i_cic(samples, att2=2):
             + 3 * _get(stage1, n - 2)
             + _get(stage1, n - 3)
         )
-        output.append(value >> att2)
+        output.append(value)
     return output
 
 
-def direct_q_cic(samples, att2=2):
+def direct_q_cic(samples):
     """Direct two-stage reference using the Q branch's odd phase.
 
     Q first-stage outputs occur at Q sample indexes 1,3,5,... .
@@ -58,7 +58,7 @@ def direct_q_cic(samples, att2=2):
             + 3 * stage1.get(n - 4, 0)
             + stage1.get(n - 6, 0)
         )
-        output.append(value >> att2)
+        output.append(value)
     return output
 
 
