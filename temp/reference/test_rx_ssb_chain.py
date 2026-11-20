@@ -1,4 +1,4 @@
-"""Tests for the partial CIC -> quadrature -> baseline SSB chain."""
+"""Tests for the partial CIC -> quadrature -> SSB post pipeline."""
 
 import unittest
 
@@ -52,6 +52,24 @@ class TestRxSsbReferencePipeline(unittest.TestCase):
                     output.append(value.audio_sample)
         self.assertTrue(output)
         self.assertTrue(all(-512 <= sample <= 511 for sample in output))
+
+    def test_nr_and_iir_options_are_connected_to_pipeline_post_state(self):
+        pipeline = RxSsbReferencePipeline(
+            att2=0, volume=13, agc=0, nr=1, filt=1
+        )
+        outputs = []
+        for n in range(128):
+            i_sample = ((n * 37) % 256) - 128
+            q_sample = ((n * 53) % 256) - 128
+            for channel, sample in (("I", i_sample), ("Q", q_sample)):
+                value = pipeline.push_event(channel, sample)
+                if value is not None:
+                    outputs.append(value.audio_sample)
+
+        self.assertTrue(outputs)
+        self.assertNotEqual(pipeline.post.nr_state.ea1, 0)
+        self.assertNotEqual(pipeline.post.iir_state.zb1, 0)
+        self.assertTrue(all(-512 <= item <= 511 for item in outputs))
 
 
 if __name__ == "__main__":
