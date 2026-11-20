@@ -146,9 +146,9 @@ CW branch использует другую пару biquad секций, зат
 
 - Диапазоны умножений и сумм в SSB IIR для реального AGC/volume output не оценены.
 - Для NR in-ea1 должен быть проверен на AVR signed-int overflow при крайних внутренних уровнях.
-- Частотные характеристики SSB/CW biquads нужно получить из точных integer recurrences, включая truncation и clipping.
+- Линейная SSB transfer response уже рассчитана; нужно получить AVR integer response с truncation/overflow и отдельно разобрать CW filters 4..7.
 - Проверить скачок/звон после переключения filt, bypass/re-enable и mode.
-- Проверить, влияет ли 600 Hz CW active branch / disabled 700 Hz alternative на желаемую конфигурацию переноса.
+- Проверить, влияет ли 600 Hz CW active branch / disabled 700 Hz alternative на желаемую конфигурацию переноса. При FILTER_700HZ выключенном условная ветка cw_tone==0 исключается препроцессором, поэтому в filt_var() основной 600-Hz block выполняется независимо от cw_tone.
 
 ## 8. Исходные участки кода
 
