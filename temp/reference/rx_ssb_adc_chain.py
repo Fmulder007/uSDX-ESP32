@@ -6,11 +6,13 @@ Stages:
       -> I midpoint interpolation
       -> active NEW_RX CIC schedule
       -> att2 + Hilbert + I delay
-      -> baseline SSB fast AGC + volume + clipping
+      -> baseline SSB AGC + volume + optional NR/SSB IIR + clipping
 
 The exact ADC sample-and-hold aperture within each timer event is not modeled.
 The first ADC register value after start_rx() is configurable because the
 original source does not explicitly start the first conversion before Timer2.
+The separate rx_adc_timing.py model analyzes that startup sequence, but is not
+yet wired into this event-level full chain.
 """
 
 from dataclasses import dataclass, field
@@ -27,6 +29,8 @@ class RxSsbAdcReferencePipeline:
     att2: int = 2
     volume: int = 12
     agc: int = 1
+    nr: int = 0
+    filt: int = 0
     startup_adc_register: int = 0
     adc_input: RxAdcInputState = field(init=False)
     ssb_chain: RxSsbReferencePipeline = field(init=False)
@@ -39,6 +43,8 @@ class RxSsbAdcReferencePipeline:
             att2=self.att2,
             volume=self.volume,
             agc=self.agc,
+            nr=self.nr,
+            filt=self.filt,
         )
 
     def push_timer_event(
