@@ -4,8 +4,10 @@
 
 ## Текущая модель
 
-- `rx_adc_input.py` — упрощённый MUX/read-previous pipeline для установившегося I/Q режима и midpoint interpolation I (не точная startup-модель после ADEN).\n- `rx_adc_timing.py` — цикл-тактовая модель ADC startup: первая 25-тактовая конверсия, обычные 13-тактовые конверсии, sample-and-hold timestamps и момент обновления ADC data register.
-- `test_rx_adc_input.py` — тесты логического канального порядка, начального регистра и интерполяции.\n- `test_rx_adc_timing.py` — тесты задержки первой конверсии, двух стартовых чтений старого ADC register, первого Q результата в I slot и sample-and-hold offsets.
+- `rx_adc_input.py` — упрощённый MUX/read-previous pipeline для установившегося I/Q режима и midpoint interpolation I (не точная startup-модель после ADEN).
+- `rx_adc_timing.py` — цикл-тактовая модель ADC startup: первая 25-тактовая конверсия, обычные 13-тактовые конверсии, sample-and-hold timestamps и момент обновления ADC data register.
+- `test_rx_adc_input.py` — тесты логического канального порядка, начального регистра и интерполяции.
+- `test_rx_adc_timing.py` — тесты задержки первой конверсии, двух стартовых чтений старого ADC register, первого Q результата в I slot и sample-and-hold offsets.
 - `rx_cic.py` — активный восьмифазный RX CIC из NEW_RX=1; выдаёт сырые пары до att2.
 - `test_rx_cic.py` — проверка расписания функций против прямой каскадной формулы.
 - `rx_quadrature.py` — активный Hilbert FIR и 7-sample I delay; применяет att2.
@@ -37,6 +39,7 @@
 - выходная аудио-интерполяция.
 
 Набор содержит несколько отдельных моделей и одну сквозную частичную SSB-цепочку. Для CIC расписание сверяется с прямой двухступенчатой формулой; для Hilbert/I-delay есть impulse/delay tests; для ADC input есть MUX/read-previous и I interpolation tests; для slow_dsp есть AGC/volume/clipping tests. Все эти ступени соединены в rx_ssb_adc_chain.py. Аудио-интерполятор, NR/IIR, AM/FM и спектральные тесты пока не готовы.
-\n## Startup timing caveat
+
+## Startup timing caveat
 
 rx_adc_timing.py выявляет startup-последовательность после ADEN. rx_adc_input.py и rx_ssb_adc_chain.py пока остаются абстракцией установившегося логического потока и не используют эту startup-модель. Точная задержка ISR до ADSC, фаза ADC prescaler и analog acquisition/settling требуют отдельного уточнения. См. ../16_RX_ADC_STARTUP_TIMING.md.
