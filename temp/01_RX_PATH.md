@@ -143,4 +143,4 @@ slow_dsp(ac) вызывается один раз на выходную пару
 - [Combined partial RX pipeline](reference/rx_chain.py) and [integration tests](reference/test_rx_chain.py): CIC raw output → att2 → Hilbert/I delay.
 - [Baseline SSB post-processing](reference/rx_ssb_post.py) and [tests](reference/test_rx_ssb_post.py): fast AGC, volume and clipping for nr=0/filt=0.
 
-The partial SSB chain is joined in [rx_ssb_chain.py](reference/rx_ssb_chain.py): CIC → att2/Hilbert/I delay → baseline fast AGC/volume/clipping. It begins with logical I/Q samples and does not yet include ADC mux/read-previous scheduling, I midpoint interpolation, NR/IIR, AM/FM or audio output interpolation.
+The partial SSB chain is joined in [rx_ssb_chain.py](reference/rx_ssb_chain.py): CIC → att2/Hilbert/I delay → baseline fast AGC/volume/clipping. It begins with logical I/Q samples and does not yet include ADC mux/read-previous scheduling, I midpoint interpolation, NR/IIR, AM/FM or audio output interpolation. Its scope, interfaces and test instructions are summarized in [15_RX_REFERENCE_PIPELINE.md](15_RX_REFERENCE_PIPELINE.md).
