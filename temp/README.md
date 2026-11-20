@@ -57,10 +57,10 @@
 - Контрольный скетч OLED 128x64 успешно скомпилирован и прошит; дисплей и счётчик работают.
 - Перенос DSP-кода ещё не начат.
 - Карта RX/TX, состояние и черновик интерфейса подготовлены.
-- Host-side reference-модели активного RX CIC, Hilbert/I-delay и базового SSB post-processing соединены в частичный pipeline reference/rx_ssb_chain.py.
-- Pipeline начинается с уже разделённых логических I/Q samples; физический ADC mux/read-previous pipeline и midpoint interpolation I пока не включены.
+- Host-side модели RX ADC input, CIC, Hilbert/I-delay и базового SSB post-processing соединены в частичную timer-event цепочку reference/rx_ssb_adc_chain.py.
+- Модель повторяет программный MUX/read-previous порядок и midpoint interpolation I; точное analog sample-and-hold aperture, settling и jitter внутри conversion пока не включены.
 - NR/IIR, AM/FM, выходной аудио-интерполятор и TX reference пока не готовы; спектральные измерения ещё не выполнены.
-- Следующий этап: расширить reference model на Hilbert/IQ alignment, затем на slow_dsp; после этого отдельно построить TX reference.
+- Следующий этап: уточнить ADC timing assumptions, завершить NR/IIR и аудиовыход reference, затем построить TX reference.
 
 ## Правила
 
