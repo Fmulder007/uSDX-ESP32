@@ -172,3 +172,17 @@ Timer1 задаёт PWM top:
 Нельзя самостоятельно исправлять его при первом переносе. Сначала нужно решить, что является эталоном: точное поведение исходного устройства или номинальная математическая шкала F_SAMP_TX. Сохранение исходного поведения — базовый ориентир; любое изменение оформить отдельным вариантом и проверить спектром/частотным измерением.
 
 Источники: [F_CPU override](https://github.com/threeme3/usdx/blob/bf8acd31b8/usdx.ino#L130-L143), [timer1_start/timer2_start](https://github.com/threeme3/usdx/blob/bf8acd31b8/usdx.ino#L3295-L3330), [переключение частоты Timer2 RX/TX](https://github.com/threeme3/usdx/blob/bf8acd31b8/usdx.ino#L3695-L3705).
+
+## 8. Исполняемая ADC input model
+
+Программная часть MUX/read-previous и midpoint interpolation I вынесена в:
+- [rx_adc_input.py](reference/rx_adc_input.py)
+- [test_rx_adc_input.py](reference/test_rx_adc_input.py)
+
+Полная доступная SSB цепочка, начиная с значений analog I/Q для каждого Timer2 event, собрана в:
+- [rx_ssb_adc_chain.py](reference/rx_ssb_adc_chain.py)
+- [test_rx_ssb_adc_chain.py](reference/test_rx_ssb_adc_chain.py)
+
+В модели параметр startup_adc_register позволяет задать содержимое ADC data register на первом чтении после start_rx(). По умолчанию он равен нулю только для тестового удобства; исходный код не гарантирует это значение.
+
+Входные I/Q values трактуются как значения, захваченные conversion, стартовавшей на соответствующем Timer2 event. Точный analog sample-and-hold aperture внутри conversion, acquisition settling и jitter пока не моделируются. Это остаётся отдельной аппаратно-временной задачей перед выбором фактического ADC/codec на ESP32.
