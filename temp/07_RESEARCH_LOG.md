@@ -156,3 +156,12 @@
 - Добавлена функция audit_nr_deltas() и тест для NR1/NR8 в temp/reference/rx_numeric_audit.py и test_rx_numeric_audit.py.
 - Добавлены temp/reference/avr_nr_probe.cpp и avr_nr_probe.md. Probe построен как C++ translation unit, без Ofast pragma: process_nr() находится до pragma в исходном sketch.
 - Это worst-case boundary test, не утверждение о типовом signal level. Wide NR reference остаётся математическим baseline; фактическое AVR-GCC поведение необходимо получить на целевом toolchain.
+
+
+### RX Hilbert image rejection: проверка заявленных 43 dB — 2026-11-20
+- Из active source formula восстановлены коэффициенты 15-tap odd-symmetric Hilbert: [-2,0,-8,0,-21,0,-79,0,79,0,21,0,8,0,2]/128; group delay ровно 7 I/Q pairs и совпадает с I delay.
+- Аналитически вычислен H(e^jw) и image-rejection ratio для двух квадратурных orientations: IRR=20log10((1+|H|)/|1-|H||).
+- При номинальных 8 kSPS: 43.94 dB на 650 Hz, 35.77 dB на 3400 Hz. При действительной pair rate 7812.5 SPS: 47.82 dB на 650 Hz, 27.36 dB на 3400 Hz.
+- Независимая time-domain проверка через RxQuadratureState с I=cos, Q=±sin, amplitude1000, 8192 samples и skip первых256 дала: 8000 SPS — 42.45/35.19 dB на 650/3400 Hz; 7812.5 SPS — 45.74/27.13 dB.
+- Вывод ограничен isolated Hilbert/I-delay stage. В полный radio path входят CIC passband, analog I/Q mismatch, ADC aperture и прочее; они здесь не смоделированы. Но утверждение source comment о 43 dB на всём диапазоне 650…3400 Hz не получается из коэффициентов этого FIR у верхнего края.
+- Добавлены temp/19_RX_HILBERT_IMAGE_REJECTION.md и test_rx_hilbert_image_rejection.py (три проверки). Выбор нового FIR/полосы не сделан; текущие coefficients оставлены как baseline.
