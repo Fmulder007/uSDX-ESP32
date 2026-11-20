@@ -101,3 +101,14 @@
 - Прежняя rx_adc_input.py оставлена как упрощённая логическая модель установившегося режима; сквозная rx_ssb_adc_chain.py пока не подключена к startup timing model.
 - Открыто: точный цикл ISR от входа в обработчик до ADSC, фаза свободного ADC prescaler относительно Timer2, фактический I/Q aperture skew, analog acquisition/settling и эффективная разрядность при ADC clock выше 1 MHz.
 - Подробный разбор: temp/16_RX_ADC_STARTUP_TIMING.md. Использован Microchip ATmega328P datasheet DS40002061A, разделы 24.4–24.5.
+
+
+### RX numeric range audit: CIC gain и Hilbert intermediates — 2026-11-20
+- Проверена граница ADC path: ADC-511 даёт [-511,512]; I midpoint average остаётся в том же диапазоне.
+- Коэффициентная граница активной CIC: первая FIR [1,3,3,1] даёт [-4088,4096], после M_SR=1 — [-2044,2048]; вторая ступень даёт raw [-16352,16384]. Все значения помещаются в signed int16.
+- DC gain: первая ступень 8/2=4, вторая 8, raw total=32; при default att2=2 перед Hilbert остаётся gain8. В source smeter() компенсирует att2 и использует R*8=32, что независимо согласуется с raw CIC gain.
+- Комментарий рядом с R=4 ("providing 12dB gain") не описывает полный коэффициентный DC gain active NEW_RX; смысл комментария точно не установлен, его нельзя использовать для scaling.
+- Проверка Hilbert выявила достижимый full-scale Q sine 650 Hz при 31.25 kS/s и att2=2: произведение на 5 равно 38790, третий числитель 34915. Это выше signed int16. Математическая wide модель даёт qh=3890; условный modulo-16-bit candidate даёт 3379 на том же примере.
+- Signed overflow в C/C++ не определён стандартом; фактический AVR-GCC результат нужно проверить на точной версии компилятора, флагах и disassembly/runtime vector. До этого не назначать wrap или int32 как bit-exact решение.
+- Добавлены temp/reference/rx_numeric_audit.py и test_rx_numeric_audit.py. Три focused tests прошли на host-side validation copy: CIC DC bounds/gain, full-scale 650Hz overflow vector, wide-vs-wrap illustration.
+- Полный разбор: temp/17_RX_NUMERIC_RANGE.md.
