@@ -127,3 +127,105 @@ def hilbert_int16_wrap_hypothesis(
         "term4": term4,
         "qh": qh,
     }
+
+
+def audit_ssb_iir_intermediates(
+    samples: Sequence[int],
+    filt: int,
+) -> Dict[str, object]:
+    """Audit mathematical intermediates in SSB filt_var() filters 1..3.
+
+    This runs the wide-integer recurrence while recording absolute maxima and
+    first sample indices above signed int16. It does not emulate AVR overflow;
+    once an AVR expression overflows, its later state may differ from this
+    mathematical baseline.
+    """
+    if filt not in (1, 2, 3):
+        raise ValueError("filt must be 1, 2 or 3")
+
+    zz1 = zz2 = 0
+    za1 = za2 = 0
+    zb1 = zb2 = 0
+    zc1 = zc2 = 0
+
+    names = (
+        "prefilter_difference",
+        "prefilter_term30",
+        "prefilter_term25",
+        "prefilter_sum",
+        "stage1_feed_sum",
+        "stage1_feedback_sum",
+        "stage2_feed_sum",
+        "stage2_feedback_sum",
+        "za0",
+        "zb0",
+        "zc0",
+    )
+    max_abs = {name: 0 for name in names}
+    first_overrange = {}
+
+    for index, input_sample in enumerate(samples):
+        x = int(input_sample)
+        if not INT16_MIN <= x <= INT16_MAX:
+            raise ValueError("IIR input sample is outside signed int16 range")
+
+        previous_zz1 = zz1
+        zz2 = previous_zz1
+        zz1 = x
+
+        prefilter_difference = x - zz2
+        prefilter_term30 = 30 * prefilter_difference
+        prefilter_term25 = 25 * zz1
+        prefilter_sum = prefilter_term30 + prefilter_term25
+        za0 = prefilter_sum >> 5
+
+        stage1_feed_sum = za0 + 2 * za1 + za2
+        if filt == 1:
+            stage1_feedback_sum = 13 * zb1 + 11 * zb2
+            zb0 = (stage1_feed_sum >> 1) - (stage1_feedback_sum >> 4)
+            stage2_feed_sum = zb0 + 2 * zb1 + zb2
+            stage2_feedback_sum = 18 * zc1 + 11 * zc2
+            zc0 = (stage2_feed_sum >> 1) - (stage2_feedback_sum >> 4)
+        elif filt == 2:
+            stage1_feedback_sum = 2 * zb1 + 8 * zb2
+            zb0 = (stage1_feed_sum >> 1) - (stage1_feedback_sum >> 4)
+            stage2_feed_sum = zb0 + 2 * zb1 + zb2
+            stage2_feedback_sum = 4 * zc1 + 8 * zc2
+            zc0 = (stage2_feed_sum >> 2) - (stage2_feedback_sum >> 4)
+        else:
+            stage1_feedback_sum = 4 * zb2
+            zb0 = (stage1_feed_sum >> 1) - (stage1_feedback_sum >> 4)
+            stage2_feed_sum = zb0 + 2 * zb1 + zb2
+            stage2_feedback_sum = 4 * zc2
+            zc0 = (stage2_feed_sum >> 2) - (stage2_feedback_sum >> 4)
+
+        observed = {
+            "prefilter_difference": prefilter_difference,
+            "prefilter_term30": prefilter_term30,
+            "prefilter_term25": prefilter_term25,
+            "prefilter_sum": prefilter_sum,
+            "stage1_feed_sum": stage1_feed_sum,
+            "stage1_feedback_sum": stage1_feedback_sum,
+            "stage2_feed_sum": stage2_feed_sum,
+            "stage2_feedback_sum": stage2_feedback_sum,
+            "za0": za0,
+            "zb0": zb0,
+            "zc0": zc0,
+        }
+        for name, value in observed.items():
+            magnitude = abs(value)
+            if magnitude > max_abs[name]:
+                max_abs[name] = magnitude
+            if magnitude > INT16_MAX and name not in first_overrange:
+                first_overrange[name] = index
+
+        zc2, zc1 = zc1, zc0
+        zb2, zb1 = zb1, zb0
+        za2, za1 = za1, za0
+
+    return {
+        "filt": filt,
+        "samples": len(samples),
+        "max_abs": max_abs,
+        "first_int16_overrange": first_overrange,
+    }
