@@ -3,6 +3,7 @@
 import unittest
 
 from rx_ssb_chain import RxSsbReferencePipeline
+from rx_ssb_post import RxSsbPostState
 
 
 class TestRxSsbReferencePipeline(unittest.TestCase):
@@ -16,22 +17,28 @@ class TestRxSsbReferencePipeline(unittest.TestCase):
                     output.append(value)
         self.assertEqual(len(output), 6)
 
-    def test_quadrature_values_are_available_with_post_output(self):
+    def test_quadrature_values_feed_the_baseline_post_stage(self):
         pipeline = RxSsbReferencePipeline(att2=0, volume=12)
+        expected_post = RxSsbPostState()
         output = []
-        for n in range(32):
-            for channel, sample in (("I", 0), ("Q", 0)):
+        for n in range(64):
+            i_sample = ((n * 17) % 256) - 128
+            q_sample = ((n * 29) % 256) - 128
+            for channel, sample in (("I", i_sample), ("Q", q_sample)):
                 value = pipeline.push_event(channel, sample)
                 if value is not None:
                     output.append(value)
         self.assertTrue(output)
         for item in output:
-            self.assertEqual(
-                item.audio_sample,
-                max(-512, min(511, item.quadrature.ssb_audio_input >> 4))
-                if pipeline.post.gain >= 1024
-                else item.audio_sample,
+            expected = expected_post.process(
+                item.quadrature.ssb_audio_input,
+                volume=12,
+                agc=1,
+                nr=0,
+                filt=0,
+                mode="USB",
             )
+            self.assertEqual(item.audio_sample, expected)
 
     def test_audio_output_stays_in_source_range(self):
         pipeline = RxSsbReferencePipeline()
