@@ -26,6 +26,8 @@
 - [x] Зафиксировать наблюдаемое source reset поведение CIC/Hilbert/AGC/IIR при cold start и TX→RX: temp/12_STATE_LIFECYCLE.md.
 - [ ] Проверить переходные процессы cold start, TX→RX и повторного TX на эталонных сигналах.
 - [ ] Проверить диапазон промежуточных значений CIC и Hilbert.
+- [x] Подготовлена отдельная reference-модель базового SSB slow_dsp (fast AGC/volume/clipping, nr=0/filt=0): temp/reference/rx_ssb_post.py.
+- [ ] Объединить CIC → Hilbert/I delay → базовый slow_dsp в одну stateful RX reference pipeline.
 - [ ] Получить эталонный результат на синусе/двухтональном тесте.
 - [ ] Проверить полярность USB/LSB и измерить подавление нежелательной боковой полосы.
 - [ ] Определить спецификацию выхода RX DSP: sample rate, format, latency.
@@ -59,7 +61,7 @@
 2. Закрыть временную модель ADC: pipeline, sample-and-hold и I/Q aperture.
 3. Разобрать и проверить масштабирование CIC, включая комментарий о 12 dB gain.
 4. Расширить host-side RX reference model: ADC mux pipeline → I interpolation → CIC → Hilbert/I delay.
-5. Добавить slow_dsp: demod, AGC, NR и IIR с отдельными состояниями.
+5. Объединить CIC → Hilbert/I delay → базовый SSB slow_dsp; затем отдельно добавить NR и IIR с явными состояниями. AM/FM — отдельными ветвями.
 6. Подготовить аналогичную модель SSB TX, включая integer atan2 macro semantics, MAX_DP и ADC pipeline.
 7. Проверить и уточнить API из temp/10_DSP_INTERFACE_DRAFT.md по результатам reference harness.
 8. Только после этого начинать перенос на ESP32.
