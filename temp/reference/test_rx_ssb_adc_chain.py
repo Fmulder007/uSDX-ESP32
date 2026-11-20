@@ -44,5 +44,30 @@ class TestRxSsbAdcReferencePipeline(unittest.TestCase):
         self.assertTrue(all(-512 <= sample <= 511 for sample in outputs))
 
 
+    def test_nr_and_ssb_iir_options_reach_adc_pipeline_post_stage(self):
+        pipeline = RxSsbAdcReferencePipeline(
+            startup_adc_register=0,
+            volume=13,
+            agc=0,
+            nr=1,
+            filt=1,
+        )
+        outputs = []
+        for tick in range(256):
+            result = pipeline.push_timer_event(
+                i_sample_at_tick=(tick * 37) % 1024,
+                q_sample_at_tick=(tick * 53) % 1024,
+            )
+            if result is not None:
+                outputs.append(result.audio_sample)
+
+        self.assertTrue(outputs)
+        self.assertEqual(pipeline.ssb_chain.nr, 1)
+        self.assertEqual(pipeline.ssb_chain.filt, 1)
+        self.assertNotEqual(pipeline.ssb_chain.post.nr_state.ea1, 0)
+        self.assertNotEqual(pipeline.ssb_chain.post.iir_state.zb1, 0)
+        self.assertTrue(all(-512 <= sample <= 511 for sample in outputs))
+
+
 if __name__ == "__main__":
     unittest.main()
