@@ -76,3 +76,10 @@
 - Добавлена обёртка temp/reference/rx_chain.py, соединяющая оба блока на упорядоченном потоке I,Q,I,Q,...
 - Добавлены integration tests на частоту выдачи пары, начальное q_ac2 и однократное применение att2.
 - Это частичный RX pipeline; ADC mux/read-previous pipeline, I midpoint interpolation, slow_dsp и audio interpolator пока не реализованы.
+
+### Базовый SSB slow_dsp reference — 2026-11-20
+- Добавлены temp/reference/rx_ssb_post.py и test_rx_ssb_post.py.
+- Модель воспроизводит default USB/LSB/CW path при FAST_AGC выключенном, agc=1, nr=0, filt=0; также покрывает ручную volume ветку agc!=1 и финальный clamp [-512,511].
+- Зафиксирован signed arithmetic shift: +100>>10=0, -100>>10=-1; gain update может быть sign-asymmetric.
+- AM/FM, NR и IIR намеренно не моделируются и вызывают NotImplementedError.
+- В исходном меню VOLUME имеет диапазон -1..16; -1 — команда powerDown, рабочая модель принимает 0..16.
