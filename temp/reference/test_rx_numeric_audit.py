@@ -8,6 +8,7 @@ from rx_numeric_audit import (
     hilbert_intermediates,
     hilbert_int16_wrap_hypothesis,
     signed_int16_overflows,
+    audit_ssb_iir_intermediates,
 )
 from rx_quadrature import RxQuadratureState
 
@@ -86,6 +87,37 @@ class TestRxNumericAudit(unittest.TestCase):
         self.assertEqual(wide["qh_wide"], 3890)
         self.assertEqual(wrapped["qh"], 3379)
         self.assertNotEqual(wide["qh_wide"], wrapped["qh"])
+
+
+    def test_ssb_iir_prefilter_and_feedback_can_exceed_int16(self):
+        samples = [
+            round(512 * math.sin(2.0 * math.pi * 2500.0 * n / 7812.5))
+            for n in range(5000)
+        ]
+
+        reports = {
+            filt: audit_ssb_iir_intermediates(samples, filt)
+            for filt in (1, 2, 3)
+        }
+        for report in reports.values():
+            self.assertEqual(report["max_abs"]["prefilter_sum"], 37315)
+            self.assertIn("prefilter_sum", report["first_int16_overrange"])
+
+        # The first SSB filter has an additional overrange feedback sum.
+        self.assertEqual(reports[1]["max_abs"]["stage2_feedback_sum"], 43357)
+        self.assertIn(
+            "stage2_feedback_sum",
+            reports[1]["first_int16_overrange"],
+        )
+
+    def test_ssb_iir_low_amplitude_vector_stays_within_int16(self):
+        samples = [
+            round(128 * math.sin(2.0 * math.pi * 3900.0 * n / 7812.5))
+            for n in range(5000)
+        ]
+        for filt in (1, 2, 3):
+            report = audit_ssb_iir_intermediates(samples, filt)
+            self.assertEqual(report["first_int16_overrange"], {})
 
 
 if __name__ == "__main__":
