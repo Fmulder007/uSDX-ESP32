@@ -278,3 +278,45 @@ def audit_ssb_iir_intermediates(
         "max_abs": max_abs,
         "first_int16_overrange": first_overrange,
     }
+
+
+def audit_nr_deltas(
+    samples: Sequence[int],
+    nr: int,
+) -> Dict[str, object]:
+    """Audit the mathematical in - ea1 delta used by process_nr().
+
+    The state update is evaluated in wide integers. The result reports which
+    deltas cannot be represented by AVR's signed 16-bit int before division.
+    """
+    if not 1 <= nr <= 8:
+        raise ValueError("nr must be in range 1..8")
+
+    state = 0
+    divisor = 1 << (nr - 1)
+    max_abs_delta = 0
+    first_overrange = None
+    deltas = []
+
+    for index, sample in enumerate(samples):
+        value = int(sample)
+        if not INT16_MIN <= value <= INT16_MAX:
+            raise ValueError("NR input sample is outside signed int16 range")
+
+        delta = value - state
+        deltas.append(delta)
+        if abs(delta) > max_abs_delta:
+            max_abs_delta = abs(delta)
+        if abs(delta) > INT16_MAX and first_overrange is None:
+            first_overrange = index
+
+        state += trunc_div(delta, divisor)
+
+    return {
+        "nr": nr,
+        "samples": len(samples),
+        "max_abs_delta": max_abs_delta,
+        "first_int16_overrange_index": first_overrange,
+        "final_wide_state": state,
+        "deltas": deltas,
+    }
