@@ -24,7 +24,7 @@
 - `test_rx_hilbert_image_rejection.py` — isolated FIR test без ADC/CIC: сравнение двух квадратурных orientations на 650 и 3400 Hz; не использовать его как полный RX image-rejection результат.
 - `rx_hilbert_candidates.py` / `test_rx_hilbert_candidates.py` — experimental 19/23-tap Q15 Hilbert FIRs, group-delay and image-rejection tests; baseline coefficients unchanged.
 - `rx_hilbert_cic_compensation.py` / `test_rx_hilbert_cic_compensation.py` — minimax 17/19/21-tap and least-squares 23/27-tap Q15 FIRs fitted to I-midpoint amplitude compensation and tested through ADC input + CIC + Hilbert.
-- `rx_hilbert_cic_sweep.py` — repeatable 650…3400 Hz / 50 Hz full-chain sweep of source15, compensated23 and compensated27 candidates.
+- `rx_hilbert_cic_sweep.py` — repeatable 650…3400 Hz / 50 Hz full-chain sweep of source15 and all compensated candidates; `--q-skew-cycles` tests a synthetic Q sample-time offset.
 - `rx_chain.py` — объединяет CIC и quadrature в частичный RX pipeline.
 - `test_rx_chain.py` — проверка стыка и однократного применения att2.
 - `rx_ssb_chain.py` — объединяет CIC, Hilbert/I-delay и базовый SSB post-processing.
