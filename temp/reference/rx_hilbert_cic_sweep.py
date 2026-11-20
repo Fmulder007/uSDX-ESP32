@@ -19,6 +19,9 @@ from rx_cic import RxCicState
 from rx_hilbert_candidates import RxHilbertCandidateState
 from rx_quadrature import RxQuadratureState
 from rx_hilbert_cic_compensation import (
+    COMPENSATED_HILBERT_17_MINIMAX_Q15,
+    COMPENSATED_HILBERT_19_MINIMAX_Q15,
+    COMPENSATED_HILBERT_21_MINIMAX_Q15,
     COMPENSATED_HILBERT_23_Q15,
     COMPENSATED_HILBERT_27_Q15,
 )
@@ -77,8 +80,11 @@ def measure_image_rejection(frequency_hz, hilbert_kind, taps=None):
 def sweep():
     candidates = (
         ("source15", "source", None),
-        ("comp23", "q15", COMPENSATED_HILBERT_23_Q15),
-        ("comp27", "q15", COMPENSATED_HILBERT_27_Q15),
+        ("comp17_minimax", "q15", COMPENSATED_HILBERT_17_MINIMAX_Q15),
+        ("comp19_minimax", "q15", COMPENSATED_HILBERT_19_MINIMAX_Q15),
+        ("comp21_minimax", "q15", COMPENSATED_HILBERT_21_MINIMAX_Q15),
+        ("comp23_ls", "q15", COMPENSATED_HILBERT_23_Q15),
+        ("comp27_ls", "q15", COMPENSATED_HILBERT_27_Q15),
     )
     rows = []
     for frequency in range(650, 3401, 50):
@@ -91,16 +97,16 @@ def sweep():
 
 def main():
     rows = sweep()
-    print("frequency_hz,source15_db,comp23_db,comp27_db")
+    names = ("source15", "comp17_minimax", "comp19_minimax", "comp21_minimax", "comp23_ls", "comp27_ls")
+    print("frequency_hz," + ",".join(name + "_db" for name in names))
     for row in rows:
         print(
-            "{frequency_hz},{source15:.2f},{comp23:.2f},{comp27:.2f}".format(
-                **row
-            )
+            "{frequency_hz},".format(**row)
+            + ",".join("{:.2f}".format(row[name]) for name in names)
         )
 
     print("\nMinimum full-chain image rejection:")
-    for name in ("source15", "comp23", "comp27"):
+    for name in names:
         minimum = min(rows, key=lambda row: row[name])
         print(
             "{}: {:.2f} dB at {} Hz".format(
