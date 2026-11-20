@@ -42,3 +42,10 @@
 - При TX target 4 800 Hz получается OCR2A=64 и фактическая частота около 4 809,375 Hz.
 - Timer1 PWM при target 78 125 Hz ограничивает top до 255; фактическая carrier около 78 152,344 Hz.
 - _F_SAMP_TX при стандартном F_MCU=20 MHz остаётся 4 800, поэтому требуется отдельно проверить расхождение с реальным TX timer rate; не менять исходную шкалу до тестов.
+
+### Черновик границы DSP-ядра — 2026-11-20
+- Подготовлен temp/10_DSP_INTERFACE_DRAFT.md.
+- Рассмотрены три RX input формы: raw alternating ADC events, массивы I/Q, source-aligned I/Q pairs.
+- Предложено сохранить одну последовательную sample state machine и добавить block wrapper поверх неё, чтобы sample/block processing сравнивались одинаково.
+- Предложен выход DSP_TX как пара frequency_delta + amplitude; Si5351/PWM остаются в RF adapter.
+- API не утверждён: окончательные типы и границы зависят от reference harness и численной проверки.
