@@ -34,7 +34,6 @@
 - [x] Восстановить SSB filt_var() equations, добавить wide recurrence и impulse/lifecycle tests: temp/reference/rx_iir.py и test_rx_iir.py. Линейная response рассчитана; AVR width audit ещё открыт.
 - [x] Соединить CIC → Hilbert/I delay → базовый SSB slow_dsp в частичный stateful pipeline: temp/reference/rx_ssb_chain.py.
 - [x] Подключить ADC mux/read-previous порядок и midpoint interpolation I к SSB chain: temp/reference/rx_ssb_adc_chain.py.
-- [x] Разобрать активный NR: это integer EMA smoother с уровнями N=1…128, truncation-to-zero deadband и одним static state; добавить reference model/tests: temp/18_RX_POST_NR_IIR.md и temp/reference/rx_nr.py.
 - [ ] Получить эталонный результат на синусе/двухтональном тесте.
 - [ ] Проверить полярность USB/LSB и измерить подавление нежелательной боковой полосы.
 - [ ] Определить спецификацию выхода RX DSP: sample rate, format, latency.
