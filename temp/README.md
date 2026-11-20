@@ -56,8 +56,9 @@
 - Контрольный скетч OLED 128x64 успешно скомпилирован и прошит; дисплей и счётчик работают.
 - Перенос DSP-кода ещё не начат.
 - Карта RX/TX, состояние и черновик интерфейса подготовлены.
-- Первая host-side модель активного RX CIC добавлена в reference/; фазовое расписание сверено с прямой двухступенчатой формулой на детерминированных тестовых потоках.
-- Полная reference-модель RX (ADC pipeline, Hilbert, demod, AGC/IIR) и TX пока не готовы; спектральные измерения ещё не выполнены.
+- Host-side reference-модели активного RX CIC, Hilbert/I-delay и базового SSB post-processing соединены в частичный pipeline reference/rx_ssb_chain.py.
+- Pipeline начинается с уже разделённых логических I/Q samples; физический ADC mux/read-previous pipeline и midpoint interpolation I пока не включены.
+- NR/IIR, AM/FM, выходной аудио-интерполятор и TX reference пока не готовы; спектральные измерения ещё не выполнены.
 - Следующий этап: расширить reference model на Hilbert/IQ alignment, затем на slow_dsp; после этого отдельно построить TX reference.
 
 ## Правила
