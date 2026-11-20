@@ -36,6 +36,7 @@
 
 Частичный сквозной RX SSB pipeline с ADC MUX/read-previous и I midpoint interpolation соединён в rx_ssb_adc_chain.py. Вход — аналоговые I/Q значения, доступные для старта conversion на каждом Timer2 event. Пока не моделируются:
 - точный sample-and-hold aperture и acquisition/settling time внутри conversion;
+- фактическое AVR-GCC поведение signed-overflow в Hilbert; rx_quadrature.py остаётся wide-intermediate mathematical baseline;
 - NR и IIR ветви;
 - AM/FM demodulation;
 - выходная аудио-интерполяция.
