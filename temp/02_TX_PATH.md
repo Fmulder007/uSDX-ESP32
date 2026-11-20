@@ -172,3 +172,5 @@ dsp_tx() вызывает:
 Это один из обязательных golden tests для TX phase path.
 
 Источник: [arctan3() и _atan2 macro](https://github.com/threeme3/usdx/blob/bf8acd31b8/usdx.ino#L1927-L1948).
+
+Подробная таблица _UA/F_SAMP_TX/MAX_DP, знаки частотной команды и перенос остатка при ограничении dp: [13_TX_PHASE_SCALING.md](13_TX_PHASE_SCALING.md).
