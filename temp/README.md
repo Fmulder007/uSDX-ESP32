@@ -38,6 +38,7 @@
 | 16_RX_ADC_STARTUP_TIMING.md | Первая 25-тактовая ADC-конверсия, startup I/Q сдвиг и цикл-тактовая модель |
 | 17_RX_NUMERIC_RANGE.md | Диапазоны CIC, Hilbert и SSB IIR, int16 overrange и план проверки AVR arithmetic |
 | 18_RX_POST_NR_IIR.md | Реальная последовательность slow_dsp, NR integer EMA/deadband, IIR sections и state lifecycle |
+| 19_RX_HILBERT_IMAGE_REJECTION.md | Проверка фактического подавления боковой полосы FIR Hilbert на 8 kSPS и 7812.5 SPS |
 | reference/rx_nr.py и rx_iir.py | Отдельные NR и SSB IIR reference models с тестами |
 | reference/avr_hilbert_probe.cpp / avr_iir_probe.cpp / avr_nr_probe.cpp | AVR-GCC диагностические probes для Hilbert, NR и SSB IIR арифметики |
 | reference/ | CIC, Hilbert/I delay, частичный RX pipeline и SSB post-processing модели с тестами |
@@ -64,7 +65,7 @@
 - Host-side модели RX ADC input, CIC, Hilbert/I-delay, SSB AGC/volume, NR и SSB IIR filters 1..3 соединены в частичную timer-event цепочку reference/rx_ssb_adc_chain.py. Отдельная reference/rx_adc_timing.py моделирует startup после ADEN с учётом 25-тактовой первой конверсии; сквозная цепочка пока использует упрощённую steady-state ADC input модель.
 - Модель reference/rx_adc_input.py повторяет логический MUX/read-previous порядок для установившегося режима и midpoint interpolation I. Startup после ADEN вынесен в отдельную цикл-тактовую модель; точные ISR delays, analog acquisition/settling и jitter ещё не включены.
 - NR и SSB IIR recurrence отдельно смоделированы, протестированы и подключены к общему SSB reference chain. Модель пока wide-intermediate, не bit-exact AVR; CW IIR 4..7, AM/FM, output interpolator, TX reference и полные спектральные tests ещё не готовы.
-- Следующий блокирующий этап: получить AVR-GCC golden results для Hilbert/NR/IIR arithmetic (wide audit уже обнаружил Hilbert и SSB IIR overrange), закрыть ISR/ADC aperture timing и подключить startup scheduler к полному RX harness; затем завершить AM/FM/audio interpolator и построить TX reference.
+- Дополнительная проверка Hilbert показала, что комментарий о 43 dB на всём диапазоне 650…3400 Hz не подтверждается у верхней границы: около 27 dB при реальных 7812.5 SPS. Следующий этап: сопоставить варианты FIR/полосу, получить AVR-GCC golden results для арифметики, закрыть ADC aperture timing, затем завершить AM/FM/audio interpolator и TX reference.
 
 ## Правила
 
