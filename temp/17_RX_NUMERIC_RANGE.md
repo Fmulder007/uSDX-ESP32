@@ -92,7 +92,7 @@ att2 по умолчанию равен 2, но это не жёсткий ми�
 
 В репозитории подготовлены:
 
-- reference/avr_hilbert_probe.c — source-style выражение с pragma Ofast и отдельный int32 wide вариант;
+- reference/avr_hilbert_probe.cpp — source-style выражение с pragma Ofast и отдельный int32 wide вариант;
 - reference/avr_hilbert_probe.md — команды сборки, извлечения disassembly и точки чтения результатов.
 - reference/avr_iir_probe.cpp и avr_iir_probe.md — source-vs-wide сравнение всех SSB IIR 1..3 на том же fixed input vector.
 
