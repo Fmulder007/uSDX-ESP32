@@ -35,4 +35,4 @@
 - AM/FM demodulation;
 - выходная аудио-интерполяция.
 
-Модель намеренно ограничена одним блоком: CIC. Для CIC выполнено сравнение восьмифазного расписания с прямой двухступенчатой формулой. Для Hilbert/I-delay есть impulse и delay tests. Для ADC MUX/read-previous и I interpolation есть отдельные тесты канального порядка. Для базового SSB post есть AGC/volume/clipping tests. Все доступные ступени соединены в частичный RX SSB pipeline; аудио-интерполятор и спектральные тесты пока не готовы.
+Набор содержит несколько отдельных моделей и одну сквозную частичную SSB-цепочку. Для CIC расписание сверяется с прямой двухступенчатой формулой; для Hilbert/I-delay есть impulse/delay tests; для ADC input есть MUX/read-previous и I interpolation tests; для slow_dsp есть AGC/volume/clipping tests. Все эти ступени соединены в rx_ssb_adc_chain.py. Аудио-интерполятор, NR/IIR, AM/FM и спектральные тесты пока не готовы.
