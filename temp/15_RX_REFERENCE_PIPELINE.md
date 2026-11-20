@@ -128,3 +128,13 @@ rx_ssb_chain.py остаётся отдельной нижней обёртко�
 4. Добавить AM/FM ветви отдельно от базовой SSB.
 5. Добавить output CIC interpolator.
 6. Только после этого сравнить полную reference chain и подключать ESP32 audio adapter.
+## 9. Уточнение входной временной модели
+
+rx_ssb_adc_chain.py использует RxAdcInputState:
+- phase 0/I handler selects Q conversion and reads the previous ADC register;
+- phase 1/Q handler selects I conversion and reads the previous ADC register;
+- the same pattern repeats through the eight-event timer cycle;
+- the first ADC register value is supplied as startup_adc_register and is not assumed to be zero by the source;
+- I samples are midpoint-interpolated with C/C++ signed division truncation toward zero.
+
+The model treats i_sample_at_tick/q_sample_at_tick as the analog values captured by the conversion started on that timer event. It does not calculate the exact aperture offset after ADSC, input acquisition settling or timer-to-aperture jitter. Those depend on the exact AVR ADC timing and the analog source impedance and remain open.
