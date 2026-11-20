@@ -183,9 +183,9 @@ Timer1 задаёт PWM top:
 - [rx_ssb_adc_chain.py](reference/rx_ssb_adc_chain.py)
 - [test_rx_ssb_adc_chain.py](reference/test_rx_ssb_adc_chain.py)
 
-В модели параметр startup_adc_register позволяет задать содержимое ADC data register на первом чтении после start_rx(). По умолчанию он равен нулю только для тестового удобства; исходный код не гарантирует это значение.
+В прежней модели параметр startup_adc_register задаёт исходное содержимое ADC data register, но сама модель не учитывает, что первая конверсия после ADEN длится 25 тактов ADC и не готова к следующему Timer2 событию. Поэтому rx_adc_input.py следует считать моделью установившегося логического чередования, а не точным startup replay. Для startup-последовательности теперь существует отдельная rx_adc_timing.py; она пока не подключена к полной SSB цепочке.
 
-Входные I/Q values трактуются как значения, захваченные conversion, стартовавшей на соответствующем Timer2 event. Точный analog sample-and-hold aperture внутри conversion, acquisition settling и jitter пока не моделируются. Это остаётся отдельной аппаратно-временной задачей перед выбором фактического ADC/codec на ESP32.
+В rx_adc_timing.py sample-and-hold aperture считается в CPU cycles от старта конверсии. Абсолютный момент относительно Timer2 зависит от фазы ADC prescaler и задержки ISR до ADSC. Analog acquisition/settling, source impedance и jitter пока не моделируются.
 
 
 ## 9. Startup conversion и sample-and-hold
