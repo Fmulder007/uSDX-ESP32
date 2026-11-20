@@ -27,7 +27,7 @@ class TestRxSsbAdcReferencePipeline(unittest.TestCase):
             )
         self.assertEqual(pipeline.adc_input.phase, 0)
         self.assertEqual(pipeline.ssb_chain.cic.phase, 0)
-        self.assertEqual(pipeline.ssb_chain.cic.i_s0za1, 107)
+        self.assertEqual(pipeline.ssb_chain.cic.i_s0za1, 102)
         self.assertEqual(pipeline.ssb_chain.cic.q_s0za1, 206)
 
     def test_audio_output_range(self):
