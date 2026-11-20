@@ -35,6 +35,7 @@
 | 13_TX_PHASE_SCALING.md | Фазовая шкала TX, MAX_DP и передача остатка фазового ограничения |
 | 14_RX_SSB_POST.md | Базовая SSB-ветка slow_dsp: fast AGC, volume и clipping |
 | 15_RX_REFERENCE_PIPELINE.md | Состав, интерфейс, границы и запуск частичного RX reference pipeline |
+| 16_RX_ADC_STARTUP_TIMING.md | Первая 25-тактовая ADC-конверсия, startup I/Q сдвиг и цикл-тактовая модель |
 | reference/ | CIC, Hilbert/I delay, частичный RX pipeline и SSB post-processing модели с тестами |
 
 ## Как читать материалы
@@ -56,8 +57,8 @@
 - Контрольный скетч OLED 128x64 успешно скомпилирован и прошит; дисплей и счётчик работают.
 - Перенос DSP-кода ещё не начат.
 - Карта RX/TX, состояние и черновик интерфейса подготовлены.
-- Host-side модели RX ADC input, CIC, Hilbert/I-delay и базового SSB post-processing соединены в частичную timer-event цепочку reference/rx_ssb_adc_chain.py.
-- Модель повторяет программный MUX/read-previous порядок и midpoint interpolation I; точное analog sample-and-hold aperture, settling и jitter внутри conversion пока не включены.
+- Host-side модели RX ADC input, CIC, Hilbert/I-delay и базового SSB post-processing соединены в частичную timer-event цепочку reference/rx_ssb_adc_chain.py. Отдельная reference/rx_adc_timing.py теперь моделирует startup после ADEN с учётом 25-тактовой первой конверсии; сквозная SSB-цепочка пока использует упрощённую установившуюся ADC-модель.
+- Модель reference/rx_adc_input.py повторяет логический MUX/read-previous порядок для установившегося режима и midpoint interpolation I. Startup после ADEN вынесен в отдельную цикл-тактовую модель; точные ISR delays, analog acquisition/settling и jitter ещё не включены.
 - NR/IIR, AM/FM, выходной аудио-интерполятор и TX reference пока не готовы; спектральные измерения ещё не выполнены.
 - Следующий этап: уточнить ADC timing assumptions, завершить NR/IIR и аудиовыход reference, затем построить TX reference.
 
