@@ -22,6 +22,7 @@
 - `rx_quadrature.py` — активный Hilbert FIR и 7-sample I delay; применяет att2.
 - `test_rx_quadrature.py` — импульсная характеристика, задержка I и знак SSB-суммы.
 - `test_rx_hilbert_image_rejection.py` — сравнение RMS двух квадратурных orientations на 650 и 3400 Hz при 8 kSPS и реальных 7812.5 SPS.
+- `rx_hilbert_candidates.py` / `test_rx_hilbert_candidates.py` — experimental 19/23-tap Q15 Hilbert FIRs, group-delay and image-rejection tests; baseline coefficients unchanged.
 - `rx_chain.py` — объединяет CIC и quadrature в частичный RX pipeline.
 - `test_rx_chain.py` — проверка стыка и однократного применения att2.
 - `rx_ssb_chain.py` — объединяет CIC, Hilbert/I-delay и базовый SSB post-processing.
