@@ -9,6 +9,7 @@ from rx_numeric_audit import (
     hilbert_int16_wrap_hypothesis,
     signed_int16_overflows,
     audit_ssb_iir_intermediates,
+    audit_nr_deltas,
 )
 from rx_quadrature import RxQuadratureState
 
@@ -123,6 +124,17 @@ class TestRxNumericAudit(unittest.TestCase):
         for filt in (1, 2, 3):
             report = audit_ssb_iir_intermediates(samples, filt)
             self.assertEqual(report["first_int16_overrange"], {})
+
+
+    def test_nr_delta_can_exceed_signed_int16_before_division(self):
+        samples = [-32767, 32767]
+        nr8 = audit_nr_deltas(samples, 8)
+        self.assertEqual(nr8["max_abs_delta"], 33022)
+        self.assertEqual(nr8["first_int16_overrange_index"], 1)
+
+        nr1 = audit_nr_deltas(samples, 1)
+        self.assertEqual(nr1["max_abs_delta"], 65534)
+        self.assertEqual(nr1["first_int16_overrange_index"], 1)
 
 
 if __name__ == "__main__":
