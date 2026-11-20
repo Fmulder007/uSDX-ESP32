@@ -55,8 +55,8 @@ class RxAdcTimingModel:
     second conversion. The ADC data register changes only when a conversion
     completes.
 
-    The ADC prescaler is free-running after ADEN. \`adc_phase_cycle\` defines
-    the absolute CPU-cycle phase of its rising edges. \`handler_delay_cycles\`
+    The ADC prescaler is free-running after ADEN. `adc_phase_cycle` defines
+    the absolute CPU-cycle phase of its rising edges. `handler_delay_cycles`
     can be supplied per event to explore ISR-path timing differences; zero is
     an intentionally simplified default, not a measured ISR latency.
     """
@@ -125,7 +125,7 @@ class RxAdcTimingModel:
         logical_channel = "I" if (event_index & 1) == 0 else "Q"
         next_channel = "Q" if logical_channel == "I" else "I"
 
-        # Mirror \`ADMUX = ...; ADCSRA |= (1 << ADSC);\`.
+        # Mirror `ADMUX = ...; ADCSRA |= (1 << ADSC);`.
         # If conversion is busy, the MUX write is retained for the next start,
         # but ADSC is already one and no second conversion begins.
         started = False
