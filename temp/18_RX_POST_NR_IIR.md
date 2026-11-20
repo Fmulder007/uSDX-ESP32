@@ -1,7 +1,7 @@
 # RX post-processing: NR smoother и переключаемые IIR-фильтры
 
 **Источник:** PE1NNZ uSDX snapshot bf8acd31b8a2506c4e1d203dfb283feecae947e1, usdx.ino и usdx_filter.h.
-**Статус:** source flow, NR recurrence и SSB IIR recurrences разобраны; NR/IIR wide reference models и focused tests добавлены. Для SSB IIR вычислена линейная transfer response и сверена sinus run; AVR integer overflow/range и cold-start/filter-switch golden tests ещё требуют точной проверки.
+**Статус:** source flow, NR recurrence и SSB IIR recurrences разобраны; NR/IIR wide reference models с tests подключены к частичной SSB event chain. Для SSB IIR вычислена линейная transfer response и сверена sinus run; AVR integer overflow/range и cold-start/filter-switch golden tests ещё требуют точной проверки.
 
 ## 1. Порядок обработки в slow_dsp()
 
@@ -75,7 +75,7 @@ ea1 — один static int16_t внутри process_nr(), общий для в�
 - reference/rx_nr.py — точная recurrence и truncation toward zero; состояние одно для всех уровней.
 - reference/test_rx_nr.py — passthrough NR=1, response NR=2, deadband NR=8, отрицательное деление, заморозка состояния при NR=0 и повторное использование при смене уровня.
 
-Это модель арифметики recurrence в bounded рабочем диапазоне, но не доказательство всего AVR int16_t overflow для произвольных входов. В slow_dsp() NR включается после AGC/volume; полный range audit должен учитывать именно этот сигнал.
+Это модель арифметики recurrence в bounded рабочем диапазоне, но не доказательство всего AVR int16_t overflow для произвольных входов. NR включается после AGC/volume; полный range audit должен учитывать именно этот сигнал. NR state передаётся в общий RxSsbPostState и потому работает внутри rx_ssb_chain.py/rx_ssb_adc_chain.py, но отдельная rx_adc_timing.py startup scheduler пока не подключена к этой цепочке.
 
 ## 4. IIR — границы ветвей
 
@@ -163,3 +163,7 @@ CW branch использует другую пару biquad секций, зат
   https://github.com/threeme3/usdx/blob/bf8acd31b8/usdx.ino#L4058-L4080
 - Filter state menu transition:
   https://github.com/threeme3/usdx/blob/bf8acd31b8/usdx.ino#L5273-L5305
+
+## 9. Интеграция в partial SSB chain
+
+RxSsbPostState теперь вызывает stages в source order: AGC/volume → NR EMA → selected SSB IIR → final clip. RxSsbReferencePipeline и RxSsbAdcReferencePipeline передают nr и filt параметры до post stage. При nr=0/filt=0 прежний baseline remains unchanged. Поддерживаемый диапазон пока USB/LSB common SSB filter branch: NR 0..8 и filt 0..3. CW IIR 4..7, AM/FM и AVR signed-overflow emulation не входят в эту модель. Startup ADC timing analysis остаётся отдельной моделью; полный event chain пока использует идеализированную steady-state ADC input abstraction.
