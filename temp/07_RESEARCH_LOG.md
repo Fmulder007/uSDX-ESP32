@@ -112,3 +112,14 @@
 - Signed overflow в C/C++ не определён стандартом; фактический AVR-GCC результат нужно проверить на точной версии компилятора, флагах и disassembly/runtime vector. До этого не назначать wrap или int32 как bit-exact решение.
 - Добавлены temp/reference/rx_numeric_audit.py и test_rx_numeric_audit.py. Три focused tests прошли на host-side validation copy: CIC DC bounds/gain, full-scale 650Hz overflow vector, wide-vs-wrap illustration.
 - Полный разбор: temp/17_RX_NUMERIC_RANGE.md.
+
+
+### RX post-processing: NR recurrence и IIR state — 2026-11-20
+- Проверен активный slow_dsp() порядок: detector branch для AM/FM, AGC/volume, NR, optional filt_var(), final clamp [-512,511].
+- Snapshot defaults: mode=USB, volume=12, filt=0, nr=0, agc=1. FAST_AGC выключен в usdx_settings.h, следовательно используется process_agc_fast; volume после него выполняет >>4. NR и IIR по умолчанию bypass.
+- NR=1..8 использует EA(ea1,in,1<<(nr-1)), то есть first-order EMA с N=1…128. NR=1 является passthrough, NR=8 — nominal alpha=1/128 и linear -3 dB frequency около9.75Hz при 7812.5 SPS.
+- Целочисленное деление C-style truncation-to-zero создаёт deadband: при NR=8 разница input-state менее128 не изменяет ea1; NR=2 — разница менее2. NR=0 не вызывает функцию, поэтому static ea1 freeze-ится, а не сбрасывается. Одна переменная ea1 общая для всех NR levels.
+- Добавлены temp/reference/rx_nr.py и test_rx_nr.py. Шесть focused assertions проверены на recurrence: NR1 passthrough, NR2 step response, NR8 deadband, отрицательное truncation, NR0 freeze/level reuse, range validation.
+- IIR карта: filt=0 bypass; SSB filt1..3 — общая 300-Hz pre-section и две Direct Form I biquad sections; CW filt4..7 — отдельные biquad coefficients, zc0>>3 output. UI labels не считать измеренной полосой пропускания.
+- Все histories filt_var() объявлены static; filter menu выставляет _init, но сами фильтровые histories не reset-ятся. При filt=0 фильтр не вызывается и его histories заморожены. Это потенциальный источник transient при смене filter/mode.
+- Подробный разбор: temp/18_RX_POST_NR_IIR.md. NR model пока отдельная и не подключена к rx_ssb_adc_chain.py; IIR model ещё предстоит реализовать после AVR numeric audit.
