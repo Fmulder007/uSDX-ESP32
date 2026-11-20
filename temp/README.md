@@ -34,6 +34,7 @@
 | 12_STATE_LIFECYCLE.md | Инициализация, скрытое static-состояние и reset при RX/TX switching |
 | 13_TX_PHASE_SCALING.md | Фазовая шкала TX, MAX_DP и передача остатка фазового ограничения |
 | 14_RX_SSB_POST.md | Базовая SSB-ветка slow_dsp: fast AGC, volume и clipping |
+| reference/ | CIC, Hilbert/I delay, частичный RX pipeline и SSB post-processing модели с тестами |
 | [reference/](reference/) | Исполняемые host-side модели и тесты отдельных DSP-блоков |
 
 ## Как читать материалы
