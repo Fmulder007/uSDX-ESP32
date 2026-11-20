@@ -1,6 +1,6 @@
-"""Source-compatible AVR ADC mux/read-previous input model for RX.
+"""Idealized steady-state AVR ADC mux/read-previous input model for RX.
 
-The uSDX ISR selects the MUX for the next conversion, starts that conversion,
+This model does not reproduce the 25-cycle first conversion after ADEN;\nsee rx_adc_timing.py for the startup conversion scheduler.\n\nThe uSDX ISR selects the MUX for the next conversion, starts that conversion,
 then reads the ADC data register containing the preceding conversion result.
 The first read after start_rx() is a startup register value, because the
 source configures ADC but does not explicitly start a conversion there.
