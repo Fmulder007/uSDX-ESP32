@@ -145,7 +145,7 @@
 
 
 ### AVR IIR probe подготовлен — 2026-11-20
-- Добавлены temp/reference/avr_iir_probe.c и avr_iir_probe.md.
+- Добавлены temp/reference/avr_iir_probe.cpp и avr_iir_probe.md.
 - Probe содержит 25-sample periodic table для 2.5 kHz / amplitude512 / fs7812.5Hz; запускает по 5000 samples для каждого SSB filter 1..3.
 - Сравнивает source-style int16 state/expressions под pragma GCC optimize("Ofast") и explicit int32 wide model; выводит volatile checksum и конечные state arrays.
 - Probe не собирался: AVR-GCC в текущем исследовательском окружении отсутствует. На будущее требуется сохранить `avr-gcc --version`, flags, disassembly и значения всех checksum/state.
