@@ -3533,21 +3533,26 @@ const byte fonts[N_FONTS][8] PROGMEM = {
 };
 
 #ifndef VSS_METER
-int analogSafeRead(uint8_t pin, bool ref1v1 = false){  // performs classical analogRead with default Arduino sample-rate and analog reference setting; restores previous settings
+int analogSafeRead(uint8_t pin, bool ref1v1 = false){
+#if defined(ARDUINO_ARCH_ESP32)
+  (void)ref1v1;
+  return analogRead(pin) >> 2; // match the original 10-bit AVR scale
+#else
   noInterrupts();
-  for(;!(ADCSRA & (1 << ADIF)););  // wait until (a potential previous) ADC conversion is completed
+  for(;!(ADCSRA & (1 << ADIF)););
   uint8_t adcsra = ADCSRA;
   uint8_t admux = ADMUX;
-  ADCSRA &= ~(1 << ADIE);  // disable interrupts when measurement complete
-  ADCSRA |= (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);    // 128 prescaler for 9.6kHz
-  if(ref1v1) ADMUX &= ~(1 << REFS0);  // restore reference voltage AREF (1V1)
-  else ADMUX = (1 << REFS0);  // restore reference voltage AREF (5V)
-  delay(1);  // settle
+  ADCSRA &= ~(1 << ADIE);
+  ADCSRA |= (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);
+  if(ref1v1) ADMUX &= ~(1 << REFS0);
+  else ADMUX = (1 << REFS0);
+  delay(1);
   int val = analogRead(pin);
   ADCSRA = adcsra;
   ADMUX = admux;
   interrupts();
   return val;
+#endif
 }
 #else //VSS_METER
 uint16_t analogSafeRead(uint8_t adcpin, bool ref1v1 = false){
@@ -3567,23 +3572,30 @@ uint16_t analogSafeRead(uint8_t adcpin, bool ref1v1 = false){
 
 uint16_t analogSampleMic()
 {
+#if defined(ARDUINO_ARCH_ESP32)
+  if((dsp_cap == SDR) && (vox_thresh >= 32)) digitalWrite(RX, LOW);
+  const uint8_t oldmux = ADMUX;
+  ADMUX = admux[2];
+  const uint16_t adc = ADC;
+  ADMUX = oldmux;
+  if((dsp_cap == SDR) && (vox_thresh >= 32)) digitalWrite(RX, HIGH);
+  return adc;
+#else
   uint16_t adc;
   noInterrupts();
-  ADCSRA = (1 << ADEN) | (((uint8_t)log2((uint8_t)(F_CPU / 13 / (192307/1)))) & 0x07);  // hack: faster conversion rate necessary for VOX
-
-  if((dsp_cap == SDR) && (vox_thresh >= 32)) digitalWrite(RX, LOW);  // disable RF input, only for SDR mod and with low VOX threshold
-  //si5351.SendRegister(SI_CLK_OE, TX0RX0);
+  ADCSRA = (1 << ADEN) | (((uint8_t)log2((uint8_t)(F_CPU / 13 / (192307/1)))) & 0x07);
+  if((dsp_cap == SDR) && (vox_thresh >= 32)) digitalWrite(RX, LOW);
   uint8_t oldmux = ADMUX;
-  for(;!(ADCSRA & (1 << ADIF)););  // wait until (a potential previous) ADC conversion is completed
-  ADMUX = admux[2];  // set MUX for next conversion
-  ADCSRA |= (1 << ADSC);    // start next ADC conversion
-  for(;!(ADCSRA & (1 << ADIF)););  // wait until ADC conversion is completed
+  for(;!(ADCSRA & (1 << ADIF)););
+  ADMUX = admux[2];
+  ADCSRA |= (1 << ADSC);
+  for(;!(ADCSRA & (1 << ADIF)););
   ADMUX = oldmux;
-  if((dsp_cap == SDR) && (vox_thresh >= 32)) digitalWrite(RX, HIGH);  // enable RF input, only for SDR mod and with low VOX threshold
-  //si5351.SendRegister(SI_CLK_OE, TX0RX1);
+  if((dsp_cap == SDR) && (vox_thresh >= 32)) digitalWrite(RX, HIGH);
   adc = ADC;
   interrupts();
   return adc;
+#endif
 }
 
 volatile bool change = true;
