@@ -1,57 +1,75 @@
-# Портирование uSDX на ESP32: журнал первого прохода
+# Портирование uSDX на ESP32 — рабочий журнал
 
 Дата: 2026-11-21
 
-## Текущий курс
+## Цель
 
-Принято практическое решение: не продолжать бесконечный анализ DSP как отдельную цель, а напрямую переносить исходную прошивку PE1NNZ uSDX 1.02x на ESP32-WROOM-32U. DSP-алгоритмы сохраняются; меняется аппаратный слой.
+Прямой перенос прошивки PE1NNZ uSDX 1.02x на ESP32-WROOM-32U с сохранением оригинальных RX/TX DSP-функций. Работа идёт в firmware/uSDX_ESP32/; неизменённый upstream snapshot сохранён в firmware/reference/PE1NNZ_bf8acd31b8/.
 
-## Выполнено
+Исходник: threeme3/usdx, commit bf8acd31b8a2506c4e1d203dfb283feecae947e1.
 
-1. В `firmware/reference/PE1NNZ_bf8acd31b8/` сохранены точные неизменённые upstream-файлы `usdx.ino`, `usdx_filter.h`, `usdx_settings.h`. В `firmware/uSDX_ESP32/` находится рабочая копия для адаптации и `ina219.h`.
-2. Основной скетч переименован в `uSDX_ESP32.ino` для отдельного Arduino sketch folder.
-3. Добавлен `usdx_esp32_hal.h`:
-   - ADC1 GPIO36/39/34 с масштабированием 12→10 bit;
-   - LEDC PWM для GPIO25 и GPIO26;
-   - GPTimer на 1 MHz, который будит высокоприоритетную задачу для исполнения исходного sample callback;
-   - I²C pins GPIO21/22 через ESP32 `Wire`.
-4. В исходном скетче добавлены ESP32-ветви для adc_start/adc_stop, timer1_start/stop, timer2_start/stop, encoder setup, Si5351 I²C и аналоговых helper-функций.
-5. На время первого bring-up отключены DIAG, CAT и CW decoder; включён headless display.
-6. Добавлен GitHub Actions workflow для Arduino-ESP32 Core 3.3.13 и ESP32 Dev Module.
+## Что уже перенесено
 
-## Важные замечания первого прохода
+1. Импортированы основной скетч, usdx_filter.h, usdx_settings.h, ina219.h; точные исходные копии хранятся отдельно.
+2. Основной скетч переименован в uSDX_ESP32.ino, создан отдельный sketch-folder.
+3. Добавлен usdx_esp32_hal.h с ESP32 ветвями аппаратного слоя:
+   - ADC1 через ESP-IDF one-shot driver; 12-bit raw scaled to original 10-bit range;
+   - AVR-совместимый EEPROM block API поверх 4096-byte ESP32 EEPROM emulation;
+   - LEDC PWM для двух исходных PWM-каналов;
+   - GPTimer 10 MHz, уведомляющий высокоприоритетную FreeRTOS DSP task;
+   - стартовая GPIO-карта и обслуживание Si5351 I²C через Wire.
+4. Оригинальные RX/TX DSP-функции и фильтры оставлены в основном скетче без намеренной замены алгоритмов.
+5. SI5351 I²C адаптер поддерживает register write/read, в том числе двухбайтовое чтение для необязательного INA219; расширитель LPF использует прямой Wire interface.
+6. AVR Timer1 PWM заменён на LEDC GPIO25 (audio/sidetone) и GPIO26 (PA envelope), 8 bit.
+7. AVR Timer2 sample cadence заменён на GPTimer с разрешением 10 MHz: RX 62.5 kHz соответствует 160 тикам (16 мкс), TX 4.8 kHz — 2083 тикам. ISR только уведомляет задачу; DSP + ADC + I²C выполняются в task context.
+8. В sample timer stop добавлено ожидание окончания текущего callback перед переключением RX/TX.
+9. Энкодер PCINT заменён на GPIO interrupts GPIO18/19.
+10. В первом headless профиле отключены DIAG, CAT, CW decoder и LCD fonts; RX, SSB TX, keyer и основной radio state machine оставлены.
+11. Добавлен GitHub Actions workflow для компиляции Arduino-ESP32 Core 3.3.13 / ESP32 Dev Module.
+12. Настройки uSDX сохраняют старый binary layout через eeprom_read_block() / eeprom_write_block() wrappers. Для EEPROM emulation выделено 4096 байт; запись каждого блока завершается EEPROM.commit().
 
-- В оригинале `sdr_rx_common_q()` выбирает `admux[0]`, а `sdr_rx_common_i()` выбирает `admux[1]`. Поэтому HAL сопоставляет selector 0 → GPIO39 (Q), selector 1 → GPIO36 (I).
-- DSP callback исполняется в задаче, а не в GPTimer ISR. Это позволяет исходному TX-коду обращаться к Wire без выполнения I²C из аппаратного ISR.
-- Сейчас ADC читается через Arduino `analogRead()` в sample task. Не считать частоту 62.5 kHz и отсутствие пропусков доказанными до проверки на плате.
-- Распиновка является стартовой и требует проверки по фактической схеме аналогового тракта и PA. Не подключать PA, пока не проверен GPIO26 и его уровень.
-- Сборка ещё не подтверждена фактическим выводом Arduino CLI / GitHub Actions. Не объявлять порт собранным, пока не появится успешная сборка.
-- Исходный снимок сохранён по SHA `bf8acd31b8a2506c4e1d203dfb283feecae947e1`; лицензия MIT и copyright-заголовок сохранены в файлах.
+## ADC I/Q pipeline — важная деталь
 
-## Следующая задача
+Оригинал не читает тот канал, который только что записал в MUX. RX helper выставляет MUX для следующего timer event, запускает конверсию и читает результат предыдущей конверсии. Поэтому HAL хранит current и previous MUX отдельно.
 
-Получить реальный результат ESP32 build workflow. Исправить ошибки компиляции по факту. После успешной сборки перейти к проверке ADC/Q-I/RX, затем PWM audio и SSB TX / Si5351.
+- selector 0 соответствует I: GPIO36 / ADC1_CH0;
+- selector 1 соответствует Q: GPIO39 / ADC1_CH3;
+- selector 2 соответствует MIC: GPIO34 / ADC1_CH6.
 
+sdr_rx_common_q() выставляет selector 0 для следующего события, но получает предыдущую конверсию selector 1 (Q). sdr_rx_common_i() выставляет selector 1, но получает предыдущую конверсию selector 0 (I). В режиме TX эта задержанная схема не применяется: dsp_tx() должен читать свежие MIC samples; VOX helper также читает MIC напрямую.
 
-## Дополнительные правки аппаратного слоя
+## Стартовая распиновка
 
-7. Высокоскоростное чтение перенесено с Arduino `analogRead()` на ESP-IDF ADC1 one-shot: каналы 0/3/6 (GPIO36/39/34) настраиваются один раз; в sample callback выбирается канал по логическому `ADMUX`. Сырой 12-битный результат переводится в исходную шкалу uSDX 10 бит.
-8. GPTimer увеличен до разрешения 10 MHz: период RX получается 160 тиков (16 мкс), TX — 2083 тика (погрешность менее 0,02% относительно 4800 Гц). Таймерное прерывание только уведомляет задачу.
-9. В остановке sample timer добавлено ожидание выхода текущего DSP callback, чтобы RX/TX переключение не меняло состояние посреди обработки.
-10. I²C адаптер переведён на запрос двух байтов при чтении: это покрывает optional INA219, а неиспользованный байт Si5351-доступа очищается при завершении транзакции.
-11. Добавлена явная пометка электрической безопасности: GPIO ESP32 не 5V tolerant; аналоговые входы старой AVR-платы нельзя подключать напрямую без проверки DC bias и максимального размаха.
+| Сигнал | GPIO ESP32 | Назначение |
+|---|---:|---|
+| RX I | 36 | ADC1_CH0 |
+| RX Q | 39 | ADC1_CH3 |
+| MIC | 34 | ADC1_CH6 |
+| Audio PWM | 25 | LEDC |
+| PA envelope PWM | 26 | LEDC |
+| Si5351 SDA/SCL | 21 / 22 | I²C 400 kHz |
+| RX/TX control | 27 | GPIO |
+| DIT / DAH | 32 / 33 | key inputs |
+| Rotary A / B | 18 / 19 | encoder interrupts |
+| Button | 23 | input pulldown, active high |
+| Signal output | 4 | GPIO |
 
-Эти изменения по-прежнему не прошли фактическую компиляцию в этом рабочем окружении: локально нет Arduino CLI / ESP32 toolchain, GitHub Actions workflow добавлен, но его фактический результат здесь не получен. Не считать сборку успешной до проверки CI или компиляции на компьютере пользователя.
+Распиновка предварительная. GPIO ESP32 не 5V tolerant. Старую аналоговую плату uSDX нельзя подключать напрямую без проверки максимального напряжения и DC bias на I/Q и MIC входах. Перед подключением PA отдельно проверить GPIO26, управление разрешением и аппаратный уровень.
 
+## Что не подтверждено
 
-## Параметры и сохранение состояния
+- Arduino-ESP32 build ещё не получен. В контейнере нет Arduino CLI и Xtensa toolchain; GitHub Actions workflow добавлен, но результат его выполнения не получен.
+- ADC one-shot throughput на 62.5k events/s не измерен. adc_oneshot_read() — polling API и не должен вызываться в ISR, поэтому он вызывается из задачи; успевает ли он стабильно уложиться в 16 мкс вместе с DSP, ещё нужно проверить на устройстве.
+- Джиттер GPTimer→task, накопление task notifications и отсутствие потерянных/задержанных событий не измерены.
+- PWM waveform / carrier and PA envelope not checked on the oscilloscope.
+- Si5351 PLL update timing and full SSB TX spectrum not checked on hardware.
+- Аналоговая входная схема и уровни пока не согласованы с фактической схемой радиоплаты.
 
-12. Оригинальные `eeprom_read_block()` / `eeprom_write_block()` реализованы через EEPROM-эмуляцию ESP32 (4096 байт). Используются те же AVR byte offsets, включая `EEPROM_OFFSET=0x150`, поэтому бинарная структура параметров не меняется. Запись идёт блоком и завершается `EEPROM.commit()`.
-13. В headless профиле пропущено создание LCD custom fonts; это не влияет на DSP и устраняет лишнюю инициализацию пустого display stub.
-14. В README исправлено описание GPIO23: по умолчанию `INPUT_PULLDOWN`, кнопка active-high, соответствует исходному `inv=0`. При включённом `ONEBUTTON_INV` используется pull-up.
+## Следующая работа
 
-## Статус проверки
+1. Получить реальную сборку ESP32 и исправлять компиляторные ошибки по факту.
+2. На плате проверить старт ADC, последовательность I/Q и callback execution budget.
+3. Если one-shot ADC/task path не выдержит 16 мкс, перенести acquisition на continuous ADC/DMA, сохранив те же DSP interfaces.
+4. Проверить два PWM выхода и Si5351, затем проводить RX/TX bring-up поэтапно.
 
-- Проверен баланс всех директив препроцессора в рабочем .ino после исправления двух одноимённых `powerDown()`: unmatched `#if/#endif` нет.
-- Проверено, что метод `SI5351::powerDown()` восстановлен из upstream, а ESP32 deep sleep находится только в глобальной функции питания.
-- Фактическая Arduino-ESP32 компиляция всё ещё не выполнена: CI workflow добавлен, но результат исполнения GitHub Actions не получен. Никаких утверждений об успешной сборке пока нет.
+**Текущий статус:** начальный аппаратный порт написан, но ещё не подтверждён компиляцией и работой на плате. Называть его готовым нельзя.
