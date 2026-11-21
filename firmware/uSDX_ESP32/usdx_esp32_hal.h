@@ -223,6 +223,7 @@ inline void usdx_esp32_pwm_stop() {
 
 // Timer2 replacement. A hardware timer only wakes a high-priority task;
 // DSP and I2C code run in task context, not inside the ESP32 interrupt.
+static constexpr uint32_t USDX_TIMER_RESOLUTION_HZ = 10000000;
 static hw_timer_t* usdx_sample_timer = nullptr;
 static TaskHandle_t usdx_sample_task_handle = nullptr;
 static void (*usdx_sample_callback)() = nullptr;
@@ -268,7 +269,7 @@ inline bool usdx_esp32_sample_timer_start(uint32_t sampleRate, void (*callback)(
     }
   }
   if (usdx_sample_timer == nullptr) {
-    usdx_sample_timer = timerBegin(1000000);
+    usdx_sample_timer = timerBegin(USDX_TIMER_RESOLUTION_HZ);
     if (usdx_sample_timer == nullptr) return false;
     timerAttachInterrupt(usdx_sample_timer, &usdx_sample_timer_isr);
   } else {
@@ -276,7 +277,7 @@ inline bool usdx_esp32_sample_timer_start(uint32_t sampleRate, void (*callback)(
   }
   usdx_sample_running = true;
   timerWrite(usdx_sample_timer, 0);
-  timerAlarm(usdx_sample_timer, 1000000ULL / sampleRate, true, 0);
+  timerAlarm(usdx_sample_timer, USDX_TIMER_RESOLUTION_HZ / sampleRate, true, 0);
   return true;
 }
 
