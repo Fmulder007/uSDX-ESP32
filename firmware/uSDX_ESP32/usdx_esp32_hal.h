@@ -148,9 +148,13 @@ static volatile uint8_t usdx_avr_ucsr0b = 0;
 #define UCSR0B usdx_avr_ucsr0b
 
 inline uint8_t usdx_esp32_adc_pin(uint8_t logicalChannel) {
+  // Original RX pipeline: admux[0] is the I input, admux[1] is Q.
+  // Each helper writes the MUX for the next event, then reads the previous
+  // event's conversion; therefore common_q() consumes selector 1 and
+  // common_i() consumes selector 0.
   switch (logicalChannel) {
-    case 0: return USDX_PIN_RX_Q; // sdr_rx_common_q() selects admux[0]
-    case 1: return USDX_PIN_RX_I; // sdr_rx_common_i() selects admux[1]
+    case 0: return USDX_PIN_RX_I;
+    case 1: return USDX_PIN_RX_Q;
     case 2: return USDX_PIN_MIC;
     default: return USDX_PIN_MIC;
   }
@@ -160,10 +164,10 @@ static adc_oneshot_unit_handle_t usdx_adc1_handle = nullptr;
 
 inline adc_channel_t usdx_esp32_adc_channel(uint8_t logicalChannel) {
   // ESP32-WROOM-32U / ESP32: GPIO36=ADC1_CH0, GPIO39=ADC1_CH3,
-  // GPIO34=ADC1_CH6. Logical 0=Q, 1=I, 2=MIC matches uSDX selectors.
+  // GPIO34=ADC1_CH6. Logical 0=I, 1=Q, 2=MIC matches uSDX selectors.
   switch (logicalChannel) {
-    case 0: return ADC_CHANNEL_3;
-    case 1: return ADC_CHANNEL_0;
+    case 0: return ADC_CHANNEL_0;
+    case 1: return ADC_CHANNEL_3;
     case 2: return ADC_CHANNEL_6;
     default: return ADC_CHANNEL_6;
   }
