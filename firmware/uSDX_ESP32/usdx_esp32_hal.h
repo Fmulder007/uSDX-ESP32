@@ -152,7 +152,7 @@ inline bool usdx_esp32_adc_begin() {
 
   esp_err_t err = adc_oneshot_new_unit(&unitConfig, &usdx_adc1_handle);
   if (err != ESP_OK) {
-    Serial.printf("ADC1 init failed: %s\\n", esp_err_to_name(err));
+    Serial.printf("ADC1 init failed: %s\n", esp_err_to_name(err));
     usdx_adc1_handle = nullptr;
     return false;
   }
@@ -167,7 +167,7 @@ inline bool usdx_esp32_adc_begin() {
   for (adc_channel_t channel : channels) {
     err = adc_oneshot_config_channel(usdx_adc1_handle, channel, &channelConfig);
     if (err != ESP_OK) {
-      Serial.printf("ADC1 channel config failed: %s\\n", esp_err_to_name(err));
+      Serial.printf("ADC1 channel config failed: %s\n", esp_err_to_name(err));
       adc_oneshot_del_unit(usdx_adc1_handle);
       usdx_adc1_handle = nullptr;
       return false;
@@ -262,8 +262,8 @@ inline bool usdx_esp32_pwm_begin(uint32_t frequency) {
   usdx_ocr1bl.setAttached(paOk);
   usdx_ocr1al = 0;
   usdx_ocr1bl = 0;
-  if (!audioOk) Serial.printf("LEDC audio attach failed: GPIO%u at %lu Hz\\n", USDX_PIN_AUDIO_PWM, static_cast<unsigned long>(frequency));
-  if (!paOk) Serial.printf("LEDC PA attach failed: GPIO%u at %lu Hz\\n", USDX_PIN_PA_PWM, static_cast<unsigned long>(frequency));
+  if (!audioOk) Serial.printf("LEDC audio attach failed: GPIO%u at %lu Hz\n", USDX_PIN_AUDIO_PWM, static_cast<unsigned long>(frequency));
+  if (!paOk) Serial.printf("LEDC PA attach failed: GPIO%u at %lu Hz\n", USDX_PIN_PA_PWM, static_cast<unsigned long>(frequency));
   return audioOk && paOk;
 }
 inline void usdx_esp32_pwm_stop() {
@@ -382,7 +382,7 @@ inline bool usdx_esp32_eeprom_begin() {
   if (!usdx_eeprom_ready) {
     Serial.println("ERROR: EEPROM emulation initialization failed.");
   } else {
-    Serial.printf("EEPROM emulation ready: %u bytes\\n", static_cast<unsigned>(USDX_EEPROM_SIZE));
+    Serial.printf("EEPROM emulation ready: %u bytes\n", static_cast<unsigned>(USDX_EEPROM_SIZE));
   }
   return usdx_eeprom_ready;
 }
