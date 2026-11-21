@@ -6,6 +6,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <esp_sleep.h>
+#include "esp_adc/adc_oneshot.h"
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
@@ -129,22 +130,66 @@ inline uint8_t usdx_esp32_adc_pin(uint8_t logicalChannel) {
   }
 }
 
-inline void usdx_esp32_adc_begin() {
-  analogReadResolution(12);
-  analogSetPinAttenuation(USDX_PIN_RX_I, ADC_11db);
-  analogSetPinAttenuation(USDX_PIN_RX_Q, ADC_11db);
-  analogSetPinAttenuation(USDX_PIN_MIC, ADC_11db);
+static adc_oneshot_unit_handle_t usdx_adc1_handle = nullptr;
+
+inline adc_channel_t usdx_esp32_adc_channel(uint8_t logicalChannel) {
+  // ESP32-WROOM-32U / ESP32: GPIO36=ADC1_CH0, GPIO39=ADC1_CH3,
+  // GPIO34=ADC1_CH6. Logical 0=Q, 1=I, 2=MIC matches uSDX selectors.
+  switch (logicalChannel) {
+    case 0: return ADC_CHANNEL_3;
+    case 1: return ADC_CHANNEL_0;
+    case 2: return ADC_CHANNEL_6;
+    default: return ADC_CHANNEL_6;
+  }
+}
+
+inline bool usdx_esp32_adc_begin() {
+  adc_oneshot_unit_init_cfg_t unitConfig = {};
+  unitConfig.unit_id = ADC_UNIT_1;
+  unitConfig.ulp_mode = ADC_ULP_MODE_DISABLE;
+
+  esp_err_t err = adc_oneshot_new_unit(&unitConfig, &usdx_adc1_handle);
+  if (err != ESP_OK) {
+    Serial.printf("ADC1 init failed: %s\\n", esp_err_to_name(err));
+    usdx_adc1_handle = nullptr;
+    return false;
+  }
+
+  adc_oneshot_chan_cfg_t channelConfig = {};
+  channelConfig.atten = ADC_ATTEN_DB_12;
+  channelConfig.bitwidth = ADC_BITWIDTH_DEFAULT;
+
+  const adc_channel_t channels[] = {
+    ADC_CHANNEL_0, ADC_CHANNEL_3, ADC_CHANNEL_6
+  };
+  for (adc_channel_t channel : channels) {
+    err = adc_oneshot_config_channel(usdx_adc1_handle, channel, &channelConfig);
+    if (err != ESP_OK) {
+      Serial.printf("ADC1 channel config failed: %s\\n", esp_err_to_name(err));
+      adc_oneshot_del_unit(usdx_adc1_handle);
+      usdx_adc1_handle = nullptr;
+      return false;
+    }
+  }
+  return true;
 }
 
 inline void usdx_esp32_adc_prepare(uint8_t logicalChannel) {
-  const uint8_t pin = usdx_esp32_adc_pin(logicalChannel);
-  analogSetPinAttenuation(pin, ADC_11db);
+  // All three ADC1 channels are configured once at startup. This selector
+  // remains for compatibility with the original adc_start() call sequence.
+  (void)logicalChannel;
 }
 
 inline uint16_t usdx_esp32_adc_read() {
-  // The uSDX arithmetic is written for a 10-bit, 0..1023 ADC result.
-  // ESP32's 12-bit result is scaled to the original range.
-  const int raw = analogRead(usdx_esp32_adc_pin(ADMUX & 0x0f));
+  if (usdx_adc1_handle == nullptr) return 512; // safe midscale while ADC is unavailable
+
+  int raw = 0;
+  const adc_channel_t channel = usdx_esp32_adc_channel(ADMUX & 0x0f);
+  if (adc_oneshot_read(usdx_adc1_handle, channel, &raw) != ESP_OK) {
+    return 512;
+  }
+
+  // The uSDX arithmetic is written for the original 10-bit 0..1023 scale.
   if (raw <= 0) return 0;
   if (raw >= 4095) return 1023;
   return static_cast<uint16_t>((raw + 2) >> 2);
@@ -294,7 +339,9 @@ inline void usdx_esp32_sample_timer_stop() {
 
 inline void usdx_esp32_begin() {
   Wire.begin(USDX_PIN_SI5351_SDA, USDX_PIN_SI5351_SCL, 400000);
-  usdx_esp32_adc_begin();
+  if (!usdx_esp32_adc_begin()) {
+    Serial.println("WARNING: ADC1 unavailable; RX/TX sample input will remain at midscale.");
+  }
 }
 
 // AVR watchdog/sleep calls are not part of the ESP32 port.
