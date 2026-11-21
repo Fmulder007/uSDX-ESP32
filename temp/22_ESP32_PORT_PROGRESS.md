@@ -8,7 +8,7 @@
 
 ## Выполнено
 
-1. В `firmware/uSDX_ESP32/` импортированы выбранные исходные файлы: основной `usdx.ino`, `usdx_filter.h`, `usdx_settings.h`, `ina219.h`.
+1. В `firmware/reference/PE1NNZ_bf8acd31b8/` сохранены точные неизменённые upstream-файлы `usdx.ino`, `usdx_filter.h`, `usdx_settings.h`. В `firmware/uSDX_ESP32/` находится рабочая копия для адаптации и `ina219.h`.
 2. Основной скетч переименован в `uSDX_ESP32.ino` для отдельного Arduino sketch folder.
 3. Добавлен `usdx_esp32_hal.h`:
    - ADC1 GPIO36/39/34 с масштабированием 12→10 bit;
