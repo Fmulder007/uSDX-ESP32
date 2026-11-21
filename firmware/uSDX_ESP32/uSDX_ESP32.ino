@@ -27,6 +27,12 @@
 #define AUDIO2   39
 #define DVM      34
 #define BUTTONS  23
+#ifdef SDA
+#undef SDA
+#endif
+#ifdef SCL
+#undef SCL
+#endif
 #define SDA      USDX_PIN_SI5351_SDA
 #define SCL      USDX_PIN_SI5351_SCL
 #define BLIND    1
@@ -1116,15 +1122,15 @@ public:
 };
 //#define BLIND 1             // uSDX in head-less operation
 #ifdef BLIND
-class Blind : public Print {  // This class is a dummy LCD replacement
+class Blind : public Print {  // Headless display adapter for first ESP32 bring-up
 public:
-  size_t write(uint8_t b){}
-  void setCursor(uint8_t _x, uint8_t _y){}
+  size_t write(uint8_t b) override { (void)b; return 1; }
+  void setCursor(uint8_t _x, uint8_t _y) { (void)_x; (void)_y; }
   void cursor(){}
   void noCursor(){}
-  void begin(uint8_t x = 0, uint8_t y = 0){}
+  void begin(uint8_t x = 0, uint8_t y = 0) { (void)x; (void)y; }
   void noDisplay(){}
-  void createChar(uint8_t l, uint8_t glyph[]){}
+  void createChar(uint8_t l, uint8_t glyph[]) { (void)l; (void)glyph; }
 };
 Display<Blind> lcd;
 #else
