@@ -66,8 +66,13 @@
 #ifdef SWAP_ROTARY
 #undef ROT_A
 #undef ROT_B
+#if defined(ARDUINO_ARCH_ESP32)
+#define ROT_A   19
+#define ROT_B   18
+#else
 #define ROT_A   7         //PD7    (pin 13)
 #define ROT_B   6         //PD6    (pin 12)
+#endif
 #endif
 
 #if (defined(OLED_SSD1306) || defined(OLED_SH1106))
@@ -4323,14 +4328,27 @@ void initPins(){
   pinMode(SIG_OUT, OUTPUT);
   pinMode(RX, OUTPUT);
   pinMode(KEY_OUT, OUTPUT);
-#ifdef ONEBUTTON
-  pinMode(BUTTONS, INPUT_PULLUP);  // rotary button
+#if defined(ARDUINO_ARCH_ESP32)
+  // Original button input is externally pulled down unless ONEBUTTON_INV
+  // is selected; keep the same active-high / active-low convention at 3.3V.
+  #ifdef ONEBUTTON_INV
+    pinMode(BUTTONS, INPUT_PULLUP);
+  #else
+    pinMode(BUTTONS, INPUT_PULLDOWN);
+  #endif
 #else
-  pinMode(BUTTONS, INPUT);  // L/R/rotary button
+  #ifdef ONEBUTTON
+    pinMode(BUTTONS, INPUT_PULLUP);  // rotary button
+  #else
+    pinMode(BUTTONS, INPUT);  // L/R/rotary button
+  #endif
 #endif
   pinMode(DIT, INPUT_PULLUP);
+#if defined(ARDUINO_ARCH_ESP32)
+  pinMode(DAH, INPUT_PULLUP); // replace original external 5V pull-up with internal 3.3V pull-up
+#else
   pinMode(DAH, INPUT);  // pull-up DAH 10k via AVCC
-  //pinMode(DAH, INPUT_PULLUP); // Could this replace D4? But leaks noisy VCC into mic input!
+#endif
 
   digitalWrite(AUDIO1, LOW);  // when used as output, help can mute RX leakage into AREF
   digitalWrite(AUDIO2, LOW);
