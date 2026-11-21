@@ -51,6 +51,9 @@ static volatile uint8_t usdx_avr_icr1l = 0;
 static volatile uint8_t usdx_avr_ocr1ah = 0;
 static volatile uint8_t usdx_avr_ocr1bh = 0;
 
+#define ISR(vector) void vector()
+#define TIMER2_COMPA_vect usdx_esp32_timer_compare
+
 #define ADMUX  usdx_avr_admux
 #define ADCSRA usdx_avr_adcsra
 #define ADCSRB usdx_avr_adcsrb
