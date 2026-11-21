@@ -320,22 +320,28 @@ static TaskHandle_t usdx_sample_task_handle = nullptr;
 static void (*usdx_sample_callback)() = nullptr;
 static volatile bool usdx_sample_running = false;
 static volatile bool usdx_sample_callback_busy = false;
+static volatile uint32_t usdx_sample_callback_count = 0;
+static volatile uint32_t usdx_sample_dropped_events = 0;
 
 static void usdx_sample_task(void*) {
   for (;;) {
     const uint32_t pending = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
     if (!usdx_sample_running || usdx_sample_callback == nullptr) continue;
-    for (uint32_t i = 0; i < pending; ++i) {
-      // Publish busy before the final running check. timer_stop() can then
-      // wait until an already-started callback has completely left DSP code.
-      usdx_sample_callback_busy = true;
-      if (!usdx_sample_running) {
-        usdx_sample_callback_busy = false;
-        break;
-      }
-      usdx_sample_callback();
+
+    // Do not replay an overdue batch at an artificially high sample rate.
+    // Process one current event and count events missed while DSP was busy.
+    if (pending > 1) usdx_sample_dropped_events += pending - 1;
+
+    // Publish busy before the final running check. timer_stop() can then
+    // wait until an already-started callback has completely left DSP code.
+    usdx_sample_callback_busy = true;
+    if (!usdx_sample_running) {
       usdx_sample_callback_busy = false;
+      continue;
     }
+    usdx_sample_callback();
+    ++usdx_sample_callback_count;
+    usdx_sample_callback_busy = false;
   }
 }
 
@@ -363,12 +369,12 @@ inline bool usdx_esp32_sample_timer_start(uint32_t sampleRate, void (*callback)(
     usdx_sample_timer = timerBegin(USDX_TIMER_RESOLUTION_HZ);
     if (usdx_sample_timer == nullptr) return false;
     timerAttachInterrupt(usdx_sample_timer, &usdx_sample_timer_isr);
-  } else {
-    timerStop(usdx_sample_timer);
   }
+  timerStop(usdx_sample_timer);
   usdx_sample_running = true;
   timerWrite(usdx_sample_timer, 0);
   timerAlarm(usdx_sample_timer, USDX_TIMER_RESOLUTION_HZ / sampleRate, true, 0);
+  timerStart(usdx_sample_timer);
   return true;
 }
 
@@ -381,6 +387,16 @@ inline void usdx_esp32_sample_timer_stop() {
       taskYIELD();
     }
   }
+}
+inline void usdx_esp32_report_sample_stats() {
+  static uint32_t lastReportMs = 0;
+  const uint32_t now = millis();
+  if (static_cast<uint32_t>(now - lastReportMs) < 2000U) return;
+  lastReportMs = now;
+  const uint32_t callbacks = usdx_sample_callback_count;
+  const uint32_t dropped = usdx_sample_dropped_events;
+  Serial.printf("uSDX sample task: callbacks=%lu, dropped timer events=%lu\n",
+    static_cast<unsigned long>(callbacks), static_cast<unsigned long>(dropped));
 }
 
 inline void usdx_esp32_begin() {
