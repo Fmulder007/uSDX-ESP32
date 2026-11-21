@@ -1245,7 +1245,7 @@ class I2C {
       if (data & 1U) {
         // The optional INA219 path reads two bytes; Si5351 register reads
         // consume one byte and stop() discards any unused byte.
-        Wire.requestFrom(static_cast<int>(address), 2);
+        Wire.requestFrom(address, static_cast<uint8_t>(2));
         readMode_ = true;
       } else {
         Wire.beginTransmission(address);
