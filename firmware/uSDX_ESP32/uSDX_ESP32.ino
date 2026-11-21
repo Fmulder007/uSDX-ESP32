@@ -1228,6 +1228,9 @@ class I2C {
   void start() { transaction_ = false; readMode_ = false; }
   void stop() {
     if (transaction_) Wire.endTransmission();
+    if (readMode_) {
+      while (Wire.available()) (void)Wire.read();
+    }
     transaction_ = false;
     readMode_ = false;
   }
@@ -1235,7 +1238,9 @@ class I2C {
     if (!transaction_ && !readMode_) {
       const uint8_t address = data >> 1;
       if (data & 1U) {
-        Wire.requestFrom(static_cast<int>(address), 1);
+        // The optional INA219 path reads two bytes; Si5351 register reads
+        // consume one byte and stop() discards any unused byte.
+        Wire.requestFrom(static_cast<int>(address), 2);
         readMode_ = true;
       } else {
         Wire.beginTransmission(address);
