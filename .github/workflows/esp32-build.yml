@@ -1,0 +1,25 @@
+name: ESP32 build
+
+on:
+  push:
+    paths:
+      - "firmware/uSDX_ESP32/**"
+      - ".github/workflows/esp32-build.yml"
+  pull_request:
+    paths:
+      - "firmware/uSDX_ESP32/**"
+      - ".github/workflows/esp32-build.yml"
+  workflow_dispatch:
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: arduino/setup-arduino-cli@v2
+      - name: Install ESP32 Arduino core
+        run: |
+          arduino-cli core update-index --additional-urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+          arduino-cli core install esp32:esp32@3.3.13 --additional-urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+      - name: Compile uSDX for ESP32 Dev Module
+        run: arduino-cli compile --fqbn esp32:esp32:esp32 firmware/uSDX_ESP32
