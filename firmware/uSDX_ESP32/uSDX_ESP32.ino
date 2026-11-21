@@ -4985,7 +4985,7 @@ void setup()
 
   delay(100);           // at least 40ms after power rises above 2.7V before sending commands
   lcd.begin(16, 4);     // Init LCD
-#ifndef OLED
+#if !defined(OLED) && !defined(BLIND)
   for(i = 0; i != N_FONTS; i++){  // Init fonts
     pgm_cache_item(fonts[i], 8);
     lcd.createChar(0x01 + i, /*fonts[i]*/_item);
