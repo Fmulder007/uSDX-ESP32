@@ -4,6 +4,7 @@
 // DSP functions remain in the original source; this file replaces AVR peripherals.
 
 #include <Arduino.h>
+#include <pgmspace.h>
 #include <Wire.h>
 #include <esp_sleep.h>
 #include "esp_adc/adc_oneshot.h"
