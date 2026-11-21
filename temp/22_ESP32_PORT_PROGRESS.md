@@ -77,3 +77,6 @@ sdr_rx_common_q() выставляет selector 0 для следующего с
 
 17. Планировщик sample task больше не воспроизводит накопившиеся timer notifications пачкой: при задержке исполняется один callback, а пропущенные таймерные события учитываются отдельно. В Serial раз в 2 секунды выводятся cumulative callback count и dropped timer events. Это позволяет измерить, выдерживает ли система исходную частоту, без искажения времени искусственным догоняющим burst.
 18. GPTimer переведён на 80 MHz; period ticks округляется: RX 1280 тиков / 16 мкс (точно), TX 16667 тиков / 208,3375 мкс (около 0,002% отклонения от 4800 Гц).
+
+
+15. RX ADC pipeline is now explicitly buffered: after each MUX update, ESP32 acquires the selected channel into a pending sample and returns the result acquired at the preceding timer callback. First result after RX start is midscale warm-up. TX bypasses the delayed path and reads MIC directly.
