@@ -227,14 +227,22 @@ static hw_timer_t* usdx_sample_timer = nullptr;
 static TaskHandle_t usdx_sample_task_handle = nullptr;
 static void (*usdx_sample_callback)() = nullptr;
 static volatile bool usdx_sample_running = false;
+static volatile bool usdx_sample_callback_busy = false;
 
 static void usdx_sample_task(void*) {
   for (;;) {
     const uint32_t pending = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
     if (!usdx_sample_running || usdx_sample_callback == nullptr) continue;
     for (uint32_t i = 0; i < pending; ++i) {
-      if (!usdx_sample_running) break;
+      // Publish busy before the final running check. timer_stop() can then
+      // wait until an already-started callback has completely left DSP code.
+      usdx_sample_callback_busy = true;
+      if (!usdx_sample_running) {
+        usdx_sample_callback_busy = false;
+        break;
+      }
       usdx_sample_callback();
+      usdx_sample_callback_busy = false;
     }
   }
 }
@@ -277,7 +285,9 @@ inline void usdx_esp32_sample_timer_stop() {
   if (usdx_sample_timer != nullptr) timerStop(usdx_sample_timer);
   if (usdx_sample_task_handle != nullptr) {
     xTaskNotifyGive(usdx_sample_task_handle);
-    taskYIELD();
+    while (usdx_sample_callback_busy) {
+      taskYIELD();
+    }
   }
 }
 
