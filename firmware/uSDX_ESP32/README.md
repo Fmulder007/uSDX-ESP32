@@ -28,6 +28,7 @@
 | RX I input | 36 | ADC1_CH0 / VP |
 | RX Q input | 39 | ADC1_CH3 / VN |
 | Microphone input | 34 | ADC1_CH6 |
+| DVM / optional voltage input | 35 | ADC1_CH7 |
 | Audio PWM output | 25 | LEDC, 8 bit, исходная частота 78.125 kHz |
 | PA PWM / envelope | 26 | LEDC, 8 bit |
 | Si5351 SDA | 21 | I²C |
