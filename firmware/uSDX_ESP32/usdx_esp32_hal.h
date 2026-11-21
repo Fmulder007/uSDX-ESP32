@@ -4,6 +4,7 @@
 // DSP functions remain in the original source; this file replaces AVR peripherals.
 
 #include <Arduino.h>
+#include <EEPROM.h>
 #include <pgmspace.h>
 #include <Wire.h>
 #include <esp_sleep.h>
@@ -346,6 +347,7 @@ inline void usdx_esp32_begin() {
   delay(50);
   Serial.println();
   Serial.println("uSDX ESP32 port starting");
+  usdx_esp32_eeprom_begin();
   if (!Wire.begin(USDX_PIN_SI5351_SDA, USDX_PIN_SI5351_SCL, 400000)) {
     Serial.println("ERROR: I2C bus initialization failed.");
   } else {
@@ -367,4 +369,50 @@ inline void sleep_enable() {}
 inline void sleep_disable() {}
 inline void sleep_bod_disable() {}
 inline void sleep_cpu() {}
+
 #define SLEEP_MODE_PWR_DOWN 0
+
+// AVR-compatible byte-addressed EEPROM API backed by ESP32 EEPROM emulation.
+// Keep the original uSDX address layout and serialized parameter bytes intact.
+static constexpr size_t USDX_EEPROM_SIZE = 4096;
+static bool usdx_eeprom_ready = false;
+
+inline bool usdx_esp32_eeprom_begin() {
+  usdx_eeprom_ready = EEPROM.begin(USDX_EEPROM_SIZE);
+  if (!usdx_eeprom_ready) {
+    Serial.println("ERROR: EEPROM emulation initialization failed.");
+  } else {
+    Serial.printf("EEPROM emulation ready: %u bytes\\n", static_cast<unsigned>(USDX_EEPROM_SIZE));
+  }
+  return usdx_eeprom_ready;
+}
+
+inline void eeprom_read_block(void* destination, const void* sourceAddress, size_t length) {
+  uint8_t* out = static_cast<uint8_t*>(destination);
+  const uintptr_t address = reinterpret_cast<uintptr_t>(sourceAddress);
+  for (size_t i = 0; i < length; ++i) {
+    const uintptr_t offset = address + i;
+    out[i] = (usdx_eeprom_ready && offset < USDX_EEPROM_SIZE)
+      ? EEPROM.read(static_cast<int>(offset))
+      : 0xff;
+  }
+}
+
+inline void eeprom_write_block(const void* source, void* destinationAddress, size_t length) {
+  if (!usdx_eeprom_ready) return;
+  const uint8_t* in = static_cast<const uint8_t*>(source);
+  const uintptr_t address = reinterpret_cast<uintptr_t>(destinationAddress);
+  bool changed = false;
+  for (size_t i = 0; i < length; ++i) {
+    const uintptr_t offset = address + i;
+    if (offset >= USDX_EEPROM_SIZE) break;
+    const uint8_t value = in[i];
+    if (EEPROM.read(static_cast<int>(offset)) != value) {
+      EEPROM.write(static_cast<int>(offset), value);
+      changed = true;
+    }
+  }
+  if (changed && !EEPROM.commit()) {
+    Serial.println("ERROR: EEPROM settings commit failed.");
+  }
+}
