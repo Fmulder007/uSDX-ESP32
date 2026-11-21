@@ -53,6 +53,8 @@ class UsdxEsp32AdcMuxRegister {
 };
 static UsdxEsp32AdcMuxRegister usdx_esp32_admux;
 static volatile bool usdx_adc_read_previous_mux = false;
+static uint16_t usdx_adc_pending_sample = 512;
+static bool usdx_adc_pending_valid = false;
 
 static volatile uint8_t usdx_avr_adcsra = 0;
 static volatile uint8_t usdx_avr_adcsrb = 0;
@@ -227,16 +229,29 @@ inline uint16_t usdx_esp32_adc_read_channel(uint8_t logicalChannel) {
 }
 
 inline uint16_t usdx_esp32_adc_read() {
-  // RX helpers select the next channel, then consume the previous sample.
-  // TX keeps the microphone channel selected and takes fresh samples directly.
-  const uint8_t channel = usdx_adc_read_previous_mux
-    ? usdx_esp32_admux.previousChannel()
-    : usdx_esp32_admux.currentChannel();
-  return usdx_esp32_adc_read_channel(channel);
+  // The AVR starts a conversion on the newly selected MUX and immediately
+  // reads the result of the conversion started on the preceding timer event.
+  // Model that pipeline explicitly: acquire the current selector now, return
+  // the buffered result from the prior event, then keep this sample pending.
+  if (usdx_adc_read_previous_mux) {
+    const uint16_t newlyAcquired =
+      usdx_esp32_adc_read_channel(usdx_esp32_admux.currentChannel());
+    const uint16_t result = usdx_adc_pending_valid
+      ? usdx_adc_pending_sample
+      : 512; // first post-start conversion is intentionally treated as warm-up
+    usdx_adc_pending_sample = newlyAcquired;
+    usdx_adc_pending_valid = true;
+    return result;
+  }
+
+  // TX keeps the microphone MUX selected and consumes a fresh sample directly.
+  return usdx_esp32_adc_read_channel(usdx_esp32_admux.currentChannel());
 }
 
 inline void usdx_esp32_set_adc_read_pipeline(bool enabled) {
   usdx_adc_read_previous_mux = enabled;
+  usdx_adc_pending_sample = 512;
+  usdx_adc_pending_valid = false;
 }
 #define ADC usdx_esp32_adc_read()
 
