@@ -28,7 +28,31 @@ static constexpr uint8_t USDX_PIN_SI5351_SCL = 22;
 
 // AVR register compatibility: these registers are state placeholders only.
 // ADC and timer operations are redirected to ESP32 drivers below.
-static volatile uint8_t usdx_avr_admux = 0;
+// AVR ADC MUX is updated to the *next* input before the previous
+// conversion result is read. Keep both sides of that pipeline.
+class UsdxEsp32AdcMuxRegister {
+ public:
+  UsdxEsp32AdcMuxRegister& operator=(uint8_t value) {
+    previous_ = current_;
+    current_ = value;
+    return *this;
+  }
+  UsdxEsp32AdcMuxRegister& operator|=(uint8_t value) {
+    return (*this = static_cast<uint8_t>(current_ | value));
+  }
+  UsdxEsp32AdcMuxRegister& operator&=(uint8_t value) {
+    return (*this = static_cast<uint8_t>(current_ & value));
+  }
+  operator uint8_t() const { return current_; }
+  uint8_t currentChannel() const { return current_ & 0x0f; }
+  uint8_t previousChannel() const { return previous_ & 0x0f; }
+ private:
+  uint8_t current_ = 0;
+  uint8_t previous_ = 0;
+};
+static UsdxEsp32AdcMuxRegister usdx_esp32_admux;
+static volatile bool usdx_adc_read_previous_mux = false;
+
 static volatile uint8_t usdx_avr_adcsra = 0;
 static volatile uint8_t usdx_avr_adcsrb = 0;
 static volatile uint8_t usdx_avr_didr0 = 0;
@@ -57,7 +81,7 @@ static volatile uint8_t usdx_avr_ocr1bh = 0;
 #define ISR(vector) void vector()
 #define TIMER2_COMPA_vect usdx_esp32_timer_compare
 
-#define ADMUX  usdx_avr_admux
+#define ADMUX  usdx_esp32_admux
 #define ADCSRA usdx_avr_adcsra
 #define ADCSRB usdx_avr_adcsrb
 #define DIDR0 usdx_avr_didr0
@@ -182,11 +206,11 @@ inline void usdx_esp32_adc_prepare(uint8_t logicalChannel) {
   (void)logicalChannel;
 }
 
-inline uint16_t usdx_esp32_adc_read() {
-  if (usdx_adc1_handle == nullptr) return 512; // safe midscale while ADC is unavailable
+inline uint16_t usdx_esp32_adc_read_channel(uint8_t logicalChannel) {
+  if (usdx_adc1_handle == nullptr) return 512;
 
   int raw = 0;
-  const adc_channel_t channel = usdx_esp32_adc_channel(ADMUX & 0x0f);
+  const adc_channel_t channel = usdx_esp32_adc_channel(logicalChannel);
   if (adc_oneshot_read(usdx_adc1_handle, channel, &raw) != ESP_OK) {
     return 512;
   }
@@ -195,6 +219,19 @@ inline uint16_t usdx_esp32_adc_read() {
   if (raw <= 0) return 0;
   if (raw >= 4095) return 1023;
   return static_cast<uint16_t>((raw + 2) >> 2);
+}
+
+inline uint16_t usdx_esp32_adc_read() {
+  // RX helpers select the next channel, then consume the previous sample.
+  // TX keeps the microphone channel selected and takes fresh samples directly.
+  const uint8_t channel = usdx_adc_read_previous_mux
+    ? usdx_esp32_admux.previousChannel()
+    : usdx_esp32_admux.currentChannel();
+  return usdx_esp32_adc_read_channel(channel);
+}
+
+inline void usdx_esp32_set_adc_read_pipeline(bool enabled) {
+  usdx_adc_read_previous_mux = enabled;
 }
 #define ADC usdx_esp32_adc_read()
 
