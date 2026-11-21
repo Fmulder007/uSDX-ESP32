@@ -25,7 +25,7 @@
 #define DIT      32
 #define AUDIO1   36
 #define AUDIO2   39
-#define DVM      34
+#define DVM      35
 #define BUTTONS  23
 #ifdef SDA
 #undef SDA
@@ -4351,8 +4351,10 @@ void initPins(){
   pinMode(DAH, INPUT);  // pull-up DAH 10k via AVCC
 #endif
 
+#if defined(ARDUINO_ARCH_AVR)
   digitalWrite(AUDIO1, LOW);  // when used as output, help can mute RX leakage into AREF
   digitalWrite(AUDIO2, LOW);
+#endif
   pinMode(AUDIO1, INPUT);
   pinMode(AUDIO2, INPUT);
 
