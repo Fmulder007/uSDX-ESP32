@@ -122,8 +122,8 @@ static volatile uint8_t usdx_avr_ucsr0b = 0;
 
 inline uint8_t usdx_esp32_adc_pin(uint8_t logicalChannel) {
   switch (logicalChannel) {
-    case 0: return USDX_PIN_RX_I;
-    case 1: return USDX_PIN_RX_Q;
+    case 0: return USDX_PIN_RX_Q; // sdr_rx_common_q() selects admux[0]
+    case 1: return USDX_PIN_RX_I; // sdr_rx_common_i() selects admux[1]
     case 2: return USDX_PIN_MIC;
     default: return USDX_PIN_MIC;
   }
