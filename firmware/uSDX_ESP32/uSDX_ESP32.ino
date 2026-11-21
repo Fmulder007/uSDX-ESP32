@@ -5822,6 +5822,9 @@ void loop()
 
   wdt_reset();
 
+#if defined(ARDUINO_ARCH_ESP32)
+  usdx_esp32_report_sample_stats();
+#endif
   //{ lcd.setCursor(0, 0); lcd.print(freeMemory()); lcd.print(F("    ")); }
 }
 
