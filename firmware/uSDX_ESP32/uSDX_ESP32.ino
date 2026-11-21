@@ -3439,6 +3439,7 @@ void timer1_stop()
 void timer2_start(uint32_t fs)
 {
 #if defined(ARDUINO_ARCH_ESP32)
+  usdx_esp32_set_adc_read_pipeline(fs == F_SAMP_RX);
   if (!usdx_esp32_sample_timer_start(fs, TIMER2_COMPA_vect)) {
     Serial.println("ERROR: failed to start uSDX sample timer/task");
   }
@@ -3582,10 +3583,7 @@ uint16_t analogSampleMic()
 {
 #if defined(ARDUINO_ARCH_ESP32)
   if((dsp_cap == SDR) && (vox_thresh >= 32)) digitalWrite(RX, LOW);
-  const uint8_t oldmux = ADMUX;
-  ADMUX = admux[2];
-  const uint16_t adc = ADC;
-  ADMUX = oldmux;
+  const uint16_t adc = usdx_esp32_adc_read_channel(2);
   if((dsp_cap == SDR) && (vox_thresh >= 32)) digitalWrite(RX, HIGH);
   return adc;
 #else
