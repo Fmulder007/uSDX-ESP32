@@ -10,7 +10,28 @@
 /* NOTE: configure your radio in usdx_settings.h , not here */
 #include "usdx_settings.h"
 
-// QCX pin defintions
+#if defined(ARDUINO_ARCH_ESP32)
+#include "usdx_esp32_hal.h"
+
+// ESP32-WROOM-32U pin map. Logical ADC selectors 0/1/2 are mapped in the HAL.
+#define FREQCNT  13
+#define ROT_A    18
+#define ROT_B    19
+#define RX       27
+#define SIDETONE 25
+#define KEY_OUT  26
+#define SIG_OUT  4
+#define DAH      33
+#define DIT      32
+#define AUDIO1   36
+#define AUDIO2   39
+#define DVM      34
+#define BUTTONS  23
+#define SDA      USDX_PIN_SI5351_SDA
+#define SCL      USDX_PIN_SI5351_SCL
+#define BLIND    1
+#else
+// QCX pin definitions
 #define LCD_D4  0         //PD0    (pin 2)
 #define LCD_D5  1         //PD1    (pin 3)
 #define LCD_D6  2         //PD2    (pin 4)
@@ -32,6 +53,7 @@
 #define LCD_RS  18        //PC4    (pin 27)
 #define SDA     18        //PC4    (pin 27)
 #define SCL     19        //PC5    (pin 28)
+#endif
 //#define NTX   11        //PB3    (pin 17)
 //#define PTX   11        //PB3    (pin 17)
 
@@ -129,20 +151,25 @@ ssb_cap=1; dsp_cap=2;
 //#if(ARDUINO < 10810)
 //   #error "Unsupported Arduino IDE version, use Arduino IDE 1.8.10 or later from https://www.arduino.cc/en/software"
 //#endif
-#if !(defined(ARDUINO_ARCH_AVR))
-   #error "Unsupported architecture, select Arduino IDE > Tools > Board > Arduino AVR Boards > Arduino Uno."
+#if defined(ARDUINO_ARCH_AVR)
+  #if(F_CPU != 16000000)
+    #error "Original AVR build requires a 16MHz Arduino clock configuration."
+  #endif
+  #undef F_CPU
+  #define F_CPU 20007000
+  #ifndef F_MCU
+    #define F_MCU 20000000
+  #endif
+  extern char __bss_end;
+  static int freeMemory(){ char* sp = reinterpret_cast<char*>(SP); return sp - &__bss_end; }
+#elif defined(ARDUINO_ARCH_ESP32)
+  #ifndef F_MCU
+    #define F_MCU 20000000  // Preserve the original uSDX timing/scaling reference.
+  #endif
+  static int freeMemory(){ return static_cast<int>(ESP.getFreeHeap()); }
+#else
+  #error "This uSDX port supports AVR reference builds and ESP32 targets only."
 #endif
-#if(F_CPU != 16000000)
-   #error "Unsupported clock frequency, Arduino IDE must specify 16MHz clock; alternate crystal frequencies may be specified with F_MCU."
-#endif
-#undef F_CPU
-#define F_CPU 20007000  // Actual crystal frequency of 20MHz XTAL1, note that this declaration is just informative and does not correct the timing in Arduino functions like delay(); hence a 1.25 factor needs to be added for correction.
-#ifndef F_MCU
-#define F_MCU 20000000  // 20MHz ATMEGA328P crystal
-#endif
-
-extern char __bss_end;
-static int freeMemory(){ char* sp = reinterpret_cast<char*>(SP); return sp - &__bss_end; }  // see: http://www.nongnu.org/avr-libc/user-manual/malloc.html
 
 #ifdef CAT_EXT
 volatile uint8_t cat_key = 0;
@@ -212,10 +239,13 @@ volatile uint8_t cat_active = 0;
 volatile uint32_t rxend_event = 0;
 volatile uint8_t vox = 0;
 
+#if defined(ARDUINO_ARCH_AVR)
 #include <avr/sleep.h>
 #include <avr/wdt.h>
+#endif
 
 //#define _I2C_DIRECT_IO    1 // Enables communications that is not using the standard I/O pull-down approach with pull-up resistors, instead I/O is directly driven with 0V/5V
+#if !defined(ARDUINO_ARCH_ESP32)
 class I2C_ { // Secundairy I2C class used by I2C LCD/OLED, uses alternate pins: PD2 (SDA) and PD3 (SCL)
 public:
 #if(F_MCU > 20900000)
@@ -295,11 +325,13 @@ public:
   uint8_t endTransmission(){ stop(); return 0; };
 };
 I2C_ Wire;
+#endif
 //#include <Wire.h>
 
 uint8_t backlight = 8;
 //#define RS_HIGH_ON_IDLE   1   // Experimental LCD support where RS line is high on idle periods to comply with SDA I2C standard.
 
+#if !defined(ARDUINO_ARCH_ESP32)
 class LCD : public Print {  // inspired by: http://www.technoblogy.com/show?2BET
 public:  // LCD1602 display in 4-bit mode, RS is pull-up and kept low when idle to prevent potential display RFI via RS line
   #define _dn  0      // PD0 to PD3 connect to D4 to D7 on the display
@@ -459,6 +491,8 @@ public:  // LCD1602 display in 4-bit mode, RS is pull-up and kept low when idle 
   void noDisplay(){ cmd(0x08); }
   void createChar(uint8_t l, uint8_t glyph[]){ cmd(0x40 | ((l & 0x7) << 3)); for(int i = 0; i != 8; i++) write(glyph[i]); }
 };
+#endif
+
 
 /*
 class LCD : public Print {  // inspired by: http://www.technoblogy.com/show?2BET
@@ -1107,6 +1141,22 @@ Display<LCD> lcd;     // highly-optimized LCD driver, OK for QCX supplied displa
 volatile int8_t encoder_val = 0;
 volatile int8_t encoder_step = 0;
 static uint8_t last_state;
+#if defined(ARDUINO_ARCH_ESP32)
+static void encoder_process_event() {
+  switch(last_state = (last_state << 4) | (_digitalRead(ROT_B) << 1) | _digitalRead(ROT_A)) {
+    case 0x23: encoder_val++; break;
+    case 0x32: encoder_val--; break;
+  }
+}
+static void ARDUINO_ISR_ATTR encoder_isr() { encoder_process_event(); }
+void encoder_setup() {
+  pinMode(ROT_A, INPUT_PULLUP);
+  pinMode(ROT_B, INPUT_PULLUP);
+  last_state = (_digitalRead(ROT_B) << 1) | _digitalRead(ROT_A);
+  attachInterrupt(digitalPinToInterrupt(ROT_A), encoder_isr, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(ROT_B), encoder_isr, CHANGE);
+}
+#else
 ISR(PCINT2_vect){  // Interrupt on rotary encoder turn
   //noInterrupts();
   //PCMSK2 &= ~((1 << PCINT22) | (1 << PCINT23));  // mask ROT_A, ROT_B interrupts
@@ -1134,6 +1184,9 @@ void encoder_setup()
   last_state = (_digitalRead(ROT_B) << 1) | _digitalRead(ROT_A);
   interrupts();
 }
+
+#endif
+
 /*
 class Encoder {
 public:
@@ -1163,6 +1216,41 @@ ISR(PCINT2_vect){  // Interrupt on rotary encoder turn
 // I2C communication starts with a START condition, multiple single byte-transfers (MSB first) followed by an ACK/NACK and stops with a STOP condition;
 // during data-transfer SDA may only change when SCL is LOW, during a START/STOP condition SCL is HIGH and SDA goes DOWN for a START and UP for a STOP.
 // https://www.ti.com/lit/an/slva704/slva704.pdf
+#if defined(ARDUINO_ARCH_ESP32)
+class I2C {
+ public:
+  void start() { transaction_ = false; readMode_ = false; }
+  void stop() {
+    if (transaction_) Wire.endTransmission();
+    transaction_ = false;
+    readMode_ = false;
+  }
+  void SendByte(uint8_t data) {
+    if (!transaction_ && !readMode_) {
+      const uint8_t address = data >> 1;
+      if (data & 1U) {
+        Wire.requestFrom(static_cast<int>(address), 1);
+        readMode_ = true;
+      } else {
+        Wire.beginTransmission(address);
+        transaction_ = true;
+      }
+      return;
+    }
+    if (transaction_) Wire.write(data);
+  }
+  uint8_t RecvByte(uint8_t) {
+    return Wire.available() ? static_cast<uint8_t>(Wire.read()) : 0xff;
+  }
+  void begin() {}
+  void beginTransmission(uint8_t address) { Wire.beginTransmission(address); }
+  bool write(uint8_t value) { return Wire.write(value) == 1; }
+  uint8_t endTransmission() { return Wire.endTransmission(); }
+ private:
+  bool transaction_ = false;
+  bool readMode_ = false;
+};
+#else
 class I2C {
 public:
 #if(F_MCU > 20900000)
@@ -1294,6 +1382,7 @@ public:
   bool write(uint8_t byte){ SendByte(byte); return 1; };
   uint8_t endTransmission(){ stop(); return 0; };
 };
+#endif
 
 //#define log2(n) (log(n) / log(2))
 uint8_t log2(uint16_t x){
@@ -1555,7 +1644,17 @@ public:
     i2c.stop();
     return data;
   }
-  void powerDown(){
+  void powerDown()
+{
+#if defined(ARDUINO_ARCH_ESP32)
+  timer2_stop();
+  timer1_stop();
+  adc_stop();
+  si5351.powerDown();
+  delay(100);
+  esp_deep_sleep_start();
+#else
+
     SendRegister(3, 0b11111111); // Disable all CLK outputs
     SendRegister(24, 0b00010000); // Disable state: CLK2 HIGH state, CLK0 & CLK1 LOW state when disabled; CLK2 needs to be in HIGH state to make sure that cap to gate is already charged, preventing "exponential pulse is caused by CLK2, which had been at 0v whilst it was disabled, suddenly generating a 5vpp waveform, which is “added to” the 0v filtered PWM output and causing the output fets to be driven with the full 5v pp.", see: https://forum.dl2man.de/viewtopic.php?t=146&p=1307#p1307
     SendRegister(25, 0b00000000); // Disable state: LOW state when disabled
@@ -3264,73 +3363,98 @@ asm("push r24         \n\t"
 
 void adc_start(uint8_t adcpin, bool ref1v1, uint32_t fs)
 {
-  DIDR0 |= (1 << adcpin); // disable digital input 
-  ADCSRA = 0;             // clear ADCSRA register
-  ADCSRB = 0;             // clear ADCSRB register
-  ADMUX = 0;              // clear ADMUX register
-  ADMUX |= (adcpin & 0x0f);    // set analog input pin
-  ADMUX |= ((ref1v1) ? (1 << REFS1) : 0) | (1 << REFS0);  // If reflvl == true, set AREF=1.1V (Internal ref); otherwise AREF=AVCC=(5V)
-  ADCSRA |= ((uint8_t)log2((uint8_t)(F_CPU / 13 / fs))) & 0x07;  // ADC Prescaler (for normal conversions non-auto-triggered): ADPS = log2(F_CPU / 13 / Fs) - 1; ADSP=0..7 resulting in resp. conversion rate of 1536, 768, 384, 192, 96, 48, 24, 12 kHz
-  //ADCSRA |= (1 << ADIE);  // enable interrupts when measurement complete
-  ADCSRA |= (1 << ADEN);  // enable ADC
-  //ADCSRA |= (1 << ADSC);  // start ADC measurements
+#if defined(ARDUINO_ARCH_ESP32)
+  (void)ref1v1;
+  (void)fs;
+  ADMUX = (adcpin & 0x0f);
+  usdx_esp32_adc_prepare(adcpin);
+#else
+  DIDR0 |= (1 << adcpin); // disable digital input
+  ADCSRA = 0;
+  ADCSRB = 0;
+  ADMUX = 0;
+  ADMUX |= (adcpin & 0x0f);
+  ADMUX |= ((ref1v1) ? (1 << REFS1) : 0) | (1 << REFS0);
+  ADCSRA |= ((uint8_t)log2((uint8_t)(F_CPU / 13 / fs))) & 0x07;
+  ADCSRA |= (1 << ADEN);
 #ifdef ADC_NR
-//  set_sleep_mode(SLEEP_MODE_ADC);  // ADC NR sleep destroys the timer2 integrity, therefore Idle sleep is better alternative (keeping clkIO as an active clock domain)
   set_sleep_mode(SLEEP_MODE_IDLE);
   sleep_enable();
+#endif
 #endif
 }
 
 void adc_stop()
 {
-  //ADCSRA &= ~(1 << ADATE); // disable auto trigger
-  ADCSRA &= ~(1 << ADIE);  // disable interrupts when measurement complete
-  ADCSRA |= (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);    // 128 prescaler for 9.6kHz
+#if defined(ARDUINO_ARCH_ESP32)
+  usdx_avr_adcsra = 0;
+#else
+  ADCSRA &= ~(1 << ADIE);
+  ADCSRA |= (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);
 #ifdef ADC_NR
   sleep_disable();
 #endif
-  ADMUX = (1 << REFS0);  // restore reference voltage AREF (5V)
+  ADMUX = (1 << REFS0);
+#endif
 }
 
 void timer1_start(uint32_t fs)
-{  // Timer 1: OC1A and OC1B in PWM mode
+{
+#if defined(ARDUINO_ARCH_ESP32)
+  usdx_esp32_pwm_begin(fs);
+  TCCR1A = 0;
+  TCCR1A |= (1 << COM1A1) | (1 << COM1B1);
+#else
   TCCR1A = 0;
   TCCR1B = 0;
-  TCCR1A |= (1 << COM1A1) | (1 << COM1B1) | (1 << WGM11); // Clear OC1A/OC1B on compare match, set OC1A/OC1B at BOTTOM (non-inverting mode)
-  TCCR1B |= (1 << CS10) | (1 << WGM13) | (1 << WGM12); // Mode 14 - Fast PWM;  CS10: clkI/O/1 (No prescaling)
+  TCCR1A |= (1 << COM1A1) | (1 << COM1B1) | (1 << WGM11);
+  TCCR1B |= (1 << CS10) | (1 << WGM13) | (1 << WGM12);
   ICR1H = 0x00;
-  ICR1L = min(255, F_CPU / fs);  // PWM value range (fs>78431):  Fpwm = F_CPU / [Prescaler * (1 + TOP)]
-  //TCCR1A |= (1 << COM1A1) | (1 << COM1B1) | (1 << WGM10); // Clear OC1A/OC1B on compare match, set OC1A/OC1B at BOTTOM (non-inverting mode)
-  //TCCR1B |= (1 << CS10) | (1 << WGM12); // Mode 5 - Fast PWM, 8-bit;  CS10: clkI/O/1 (No prescaling)
+  ICR1L = min(255, F_CPU / fs);
   OCR1AH = 0x00;
-  OCR1AL = 0x00;  // OC1A (SIDETONE) PWM duty-cycle (span defined by ICR).
+  OCR1AL = 0x00;
   OCR1BH = 0x00;
-  OCR1BL = 0x00;  // OC1B (KEY_OUT) PWM duty-cycle (span defined by ICR).
+  OCR1BL = 0x00;
+#endif
 }
 
 void timer1_stop()
 {
+#if defined(ARDUINO_ARCH_ESP32)
+  usdx_esp32_pwm_stop();
+#else
   OCR1AL = 0x00;
   OCR1BL = 0x00;
+#endif
 }
 
 void timer2_start(uint32_t fs)
-{  // Timer 2: interrupt mode
-  ASSR &= ~(1 << AS2);  // Timer 2 clocked from CLK I/O (like Timer 0 and 1)
+{
+#if defined(ARDUINO_ARCH_ESP32)
+  if (!usdx_esp32_sample_timer_start(fs, TIMER2_COMPA_vect)) {
+    Serial.println("ERROR: failed to start uSDX sample timer/task");
+  }
+#else
+  ASSR &= ~(1 << AS2);
   TCCR2A = 0;
   TCCR2B = 0;
   TCNT2 = 0;
-  TCCR2A |= (1 << WGM21); // WGM21: Mode 2 - CTC (Clear Timer on Compare Match)
-  TCCR2B |= (1 << CS22);  // Set C22 bits for 64 prescaler
-  TIMSK2 |= (1 << OCIE2A);  // enable timer compare interrupt TIMER2_COMPA_vect
-  uint8_t ocr = ((F_CPU / 64) / fs) - 1;   // OCRn = (F_CPU / pre-scaler / fs) - 1;
+  TCCR2A |= (1 << WGM21);
+  TCCR2B |= (1 << CS22);
+  TIMSK2 |= (1 << OCIE2A);
+  uint8_t ocr = ((F_CPU / 64) / fs) - 1;
   OCR2A = ocr;
+#endif
 }
 
 void timer2_stop()
-{ // Stop Timer 2 interrupt
-  TIMSK2 &= ~(1 << OCIE2A);  // disable timer compare interrupt
-  delay(1);  // wait until potential in-flight interrupts are finished
+{
+#if defined(ARDUINO_ARCH_ESP32)
+  usdx_esp32_sample_timer_stop();
+#else
+  TIMSK2 &= ~(1 << OCIE2A);
+  delay(1);
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -3561,7 +3685,11 @@ uint8_t semi_qsk = false;
 uint32_t semi_qsk_timeout = 0;
 
 void switch_rxtx(uint8_t tx_enable){
-  TIMSK2 &= ~(1 << OCIE2A);  // disable timer compare interrupt
+#if defined(ARDUINO_ARCH_ESP32)
+  timer2_stop();
+#else
+  TIMSK2 &= ~(1 << OCIE2A);
+#endif
   //delay(1);
   delayMicroseconds(20); // wait until potential RX interrupt is finalized
   noInterrupts();
@@ -3697,8 +3825,12 @@ void switch_rxtx(uint8_t tx_enable){
       if(!vox) if(cat_active){ DDRC |= (1<<2); } // enable PC2, so that ADC2 is pulled-down so that CAT TX is not disrupted via mic input
 #endif
   }
+#if defined(ARDUINO_ARCH_ESP32)
+  timer2_start((tx_enable) ? F_SAMP_TX : F_SAMP_RX);
+#else
   OCR2A = ((F_CPU / 64) / ((tx_enable) ? F_SAMP_TX : F_SAMP_RX)) - 1;
-  TIMSK2 |= (1 << OCIE2A);  // enable timer compare interrupt TIMER2_COMPA_vect
+  TIMSK2 |= (1 << OCIE2A);
+#endif
 }
 
 uint8_t rx_ph_q = 90;
@@ -3834,6 +3966,8 @@ void powerDown()
 
   //void(* reset)(void) = 0; reset();   // soft reset by calling reset vector (does not reset registers to defaults)
   do { wdt_enable(WDTO_15MS); for(;;); } while(0);  // soft reset by trigger watchdog timeout
+
+#endif
 }
 
 void show_banner(){
@@ -4752,13 +4886,18 @@ void readSWR()
 #endif
 void setup()
 {
+#if defined(ARDUINO_ARCH_ESP32)
+  usdx_esp32_begin();
+#endif
   digitalWrite(KEY_OUT, LOW);  // for safety: to prevent exploding PA MOSFETs, in case there was something still biasing them.
   si5351.powerDown();  // disable all CLK outputs (especially needed for si5351 variants that has CLK2 enabled by default, such as Si5351A-B04486-GT)
 
-  //uint8_t mcusr = MCUSR;
+#if defined(ARDUINO_ARCH_AVR)
   MCUSR = 0;
-  //wdt_disable();
-  wdt_enable(WDTO_4S);  // Enable watchdog
+  wdt_enable(WDTO_4S);
+#else
+  usdx_avr_mcusr = 0;
+#endif
   uint32_t t0, t1;
 #ifdef DEBUG
   // Benchmark dsp_tx() ISR (this needs to be done in beginning of setup() otherwise when VERSION containts 5 chars, mis-alignment impact performance by a few percent)
@@ -4789,11 +4928,12 @@ void setup()
 #endif //DEBUG
   ADMUX = (1 << REFS0);  // restore reference voltage AREF (5V)
 
-  // disable external interrupts
+#if defined(ARDUINO_ARCH_AVR)
   PCICR = 0;
   PCMSK0 = 0;
   PCMSK1 = 0;
   PCMSK2 = 0;
+#endif
 
   encoder_setup();
 
