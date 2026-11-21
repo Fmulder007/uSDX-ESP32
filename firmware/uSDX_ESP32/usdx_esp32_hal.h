@@ -334,36 +334,45 @@ static constexpr uint32_t USDX_TIMER_RESOLUTION_HZ = 80000000;
 static hw_timer_t* usdx_sample_timer = nullptr;
 static TaskHandle_t usdx_sample_task_handle = nullptr;
 static void (*usdx_sample_callback)() = nullptr;
+static constexpr uint32_t USDX_NOTIFY_SAMPLE_TICK = 1UL << 0;
+static constexpr uint32_t USDX_NOTIFY_SAMPLE_STOP = 1UL << 1;
 static volatile bool usdx_sample_running = false;
 static volatile bool usdx_sample_callback_busy = false;
 static volatile bool usdx_sample_stop_ack = false;
+static volatile uint32_t usdx_sample_timer_event_count = 0;
+static uint32_t usdx_sample_task_event_seen = 0;
 static volatile uint32_t usdx_sample_callback_count = 0;
 static volatile uint32_t usdx_sample_dropped_events = 0;
 
 static void usdx_sample_task(void*) {
   for (;;) {
-    const uint32_t pending = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-    if (!usdx_sample_running || usdx_sample_callback == nullptr) {
-      // Acknowledge a stop only after the notification has been consumed.
-      // This prevents an old wake-up from leaking into the next RX/TX run.
+    uint32_t notification = 0;
+    xTaskNotifyWait(0, UINT32_MAX, &notification, portMAX_DELAY);
+
+    // STOP is a separate notification bit and always takes priority over a
+    // coalesced TICK. The wait call clears all received bits before we ack.
+    if (notification & USDX_NOTIFY_SAMPLE_STOP) {
       usdx_sample_stop_ack = true;
       continue;
     }
-    usdx_sample_stop_ack = false;
-
-    // Do not replay an overdue batch at an artificially high sample rate.
-    // Process one current event and count events missed while DSP was busy.
-    if (pending > 1) usdx_sample_dropped_events += pending - 1;
-
-    // Publish busy before the final running check. timer_stop() can then
-    // wait until an already-started callback has completely left DSP code.
-    usdx_sample_callback_busy = true;
-    if (!usdx_sample_running) {
-      usdx_sample_callback_busy = false;
+    if (!(notification & USDX_NOTIFY_SAMPLE_TICK) ||
+        !usdx_sample_running || usdx_sample_callback == nullptr) {
       continue;
     }
-    usdx_sample_callback();
-    ++usdx_sample_callback_count;
+
+    // Notification bits can coalesce while DSP is busy. The ISR-side counter
+    // preserves the exact number of timer events, without replaying overdue
+    // callbacks at an artificially high sample rate.
+    const uint32_t eventCount = usdx_sample_timer_event_count;
+    const uint32_t pending = eventCount - usdx_sample_task_event_seen;
+    usdx_sample_task_event_seen = eventCount;
+    if (pending > 1) usdx_sample_dropped_events += pending - 1;
+
+    usdx_sample_callback_busy = true;
+    if (usdx_sample_running && usdx_sample_callback != nullptr) {
+      usdx_sample_callback();
+      ++usdx_sample_callback_count;
+    }
     usdx_sample_callback_busy = false;
   }
 }
@@ -371,7 +380,12 @@ static void usdx_sample_task(void*) {
 static void ARDUINO_ISR_ATTR usdx_sample_timer_isr() {
   BaseType_t higherPriorityTaskWoken = pdFALSE;
   if (usdx_sample_task_handle != nullptr && usdx_sample_running) {
-    vTaskNotifyGiveFromISR(usdx_sample_task_handle, &higherPriorityTaskWoken);
+    ++usdx_sample_timer_event_count;
+    xTaskNotifyFromISR(
+      usdx_sample_task_handle,
+      USDX_NOTIFY_SAMPLE_TICK,
+      eSetBits,
+      &higherPriorityTaskWoken);
   }
   if (higherPriorityTaskWoken == pdTRUE) portYIELD_FROM_ISR();
 }
@@ -394,6 +408,7 @@ inline bool usdx_esp32_sample_timer_start(uint32_t sampleRate, void (*callback)(
     timerAttachInterrupt(usdx_sample_timer, &usdx_sample_timer_isr);
   }
   timerStop(usdx_sample_timer);
+  usdx_sample_task_event_seen = usdx_sample_timer_event_count;
   usdx_sample_stop_ack = false;
   usdx_sample_running = true;
   timerWrite(usdx_sample_timer, 0);
@@ -409,7 +424,8 @@ inline void usdx_esp32_sample_timer_stop() {
   usdx_sample_running = false;
   if (usdx_sample_timer != nullptr) timerStop(usdx_sample_timer);
   if (usdx_sample_task_handle != nullptr) {
-    xTaskNotifyGive(usdx_sample_task_handle);
+    // A distinct STOP bit cannot be mistaken for a timer tick.
+    xTaskNotify(usdx_sample_task_handle, USDX_NOTIFY_SAMPLE_STOP, eSetBits);
     while (!usdx_sample_stop_ack || usdx_sample_callback_busy) {
       taskYIELD();
     }
