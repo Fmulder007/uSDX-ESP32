@@ -40,7 +40,7 @@
 
 Это стартовая карта выводов для первой сборки, а не подтверждённая схема подключения радиотракта. Входы ESP32 не 5-вольт-совместимые. Не подключайте непосредственно сигналы старой AVR-платы, если их максимальный уровень и смещение по постоянному току не проверены: особенно I/Q и микрофон, обычно смещённые к половине 5-вольтового питания в AVR-схеме. Все сигналы должны оставаться в допустимом диапазоне ESP32. Перед подключением PA проверьте логические уровни и назначение управляющего сигнала на GPIO26.
 
-В оригинале RX-функции сначала выставляют MUX для следующего события, а затем читают результат предыдущей ADC-конверсии. Поэтому `sdr_rx_common_q()`, записывая `admux[0]`, фактически получает предыдущий sample с `admux[1]`; `sdr_rx_common_i()` получает sample с `admux[0]`. В HAL сохранён этот конвейер: selector 0 → I / GPIO36 / ADC1_CH0, selector 1 → Q / GPIO39 / ADC1_CH3. В режиме TX конвейер не используется: читается текущий MIC selector 2 / GPIO34.
+The original RX helpers switch the AVR ADC MUX for the next event, start a conversion, and immediately consume the result from the previous event. The ESP32 HAL emulates this explicitly: it samples the current MUX selector into a pending buffer, returns the pending sample from the preceding callback, and treats the first post-start result as a midscale warm-up sample. TX bypasses this pipeline and reads the current MIC channel directly. Selector 0 соответствует I / GPIO36 / ADC1_CH0, selector 1 — Q / GPIO39 / ADC1_CH3. В режиме TX pipeline не используется: читается текущий MIC selector 2 / GPIO34.
 
 ## EEPROM и настройки
 
