@@ -1660,17 +1660,7 @@ public:
     i2c.stop();
     return data;
   }
-  void powerDown()
-{
-#if defined(ARDUINO_ARCH_ESP32)
-  timer2_stop();
-  timer1_stop();
-  adc_stop();
-  si5351.powerDown();
-  delay(100);
-  esp_deep_sleep_start();
-#else
-
+  void powerDown(){
     SendRegister(3, 0b11111111); // Disable all CLK outputs
     SendRegister(24, 0b00010000); // Disable state: CLK2 HIGH state, CLK0 & CLK1 LOW state when disabled; CLK2 needs to be in HIGH state to make sure that cap to gate is already charged, preventing "exponential pulse is caused by CLK2, which had been at 0v whilst it was disabled, suddenly generating a 5vpp waveform, which is “added to” the 0v filtered PWM output and causing the output fets to be driven with the full 5v pp.", see: https://forum.dl2man.de/viewtopic.php?t=146&p=1307#p1307
     SendRegister(25, 0b00000000); // Disable state: LOW state when disabled
@@ -3951,7 +3941,19 @@ void stepsize_change(int8_t val)
 }
 
 void powerDown()
-{ // Reduces power from 110mA to 70mA (back-light on) or 30mA (back-light off), remaining current is probably opamp quiescent current
+{
+#if defined(ARDUINO_ARCH_ESP32)
+  lcd.setCursor(0, 1); lcd.print(F("Power-off 73 :-)")); lcd_blanks();
+  timer2_stop();
+  timer1_stop();
+  adc_stop();
+  si5351.powerDown();
+  delay(100);
+  // GPIO23 is not an RTC wake pin on the classic ESP32. Wake this
+  // power-off state with the board's EN/RESET button or by power cycling.
+  esp_deep_sleep_start();
+#else
+// Reduces power from 110mA to 70mA (back-light on) or 30mA (back-light off), remaining current is probably opamp quiescent current
   lcd.setCursor(0, 1); lcd.print(F("Power-off 73 :-)")); lcd_blanks();
 
   MCUSR = ~(1<<WDRF);  // MSY be done before wdt_disable()
@@ -3996,7 +3998,6 @@ void powerDown()
 
   //void(* reset)(void) = 0; reset();   // soft reset by calling reset vector (does not reset registers to defaults)
   do { wdt_enable(WDTO_15MS); for(;;); } while(0);  // soft reset by trigger watchdog timeout
-
 #endif
 }
 
