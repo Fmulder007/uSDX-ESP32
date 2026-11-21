@@ -16,12 +16,12 @@
    - ADC1 через ESP-IDF one-shot driver; 12-bit raw scaled to original 10-bit range;
    - AVR-совместимый EEPROM block API поверх 4096-byte ESP32 EEPROM emulation;
    - LEDC PWM для двух исходных PWM-каналов;
-   - GPTimer 10 MHz, уведомляющий высокоприоритетную FreeRTOS DSP task;
+   - GPTimer 80 MHz, уведомляющий высокоприоритетную FreeRTOS DSP task;
    - стартовая GPIO-карта и обслуживание Si5351 I²C через Wire.
 4. Оригинальные RX/TX DSP-функции и фильтры оставлены в основном скетче без намеренной замены алгоритмов.
 5. SI5351 I²C адаптер поддерживает register write/read, в том числе двухбайтовое чтение для необязательного INA219; расширитель LPF использует прямой Wire interface.
 6. AVR Timer1 PWM заменён на LEDC GPIO25 (audio/sidetone) и GPIO26 (PA envelope), 8 bit.
-7. AVR Timer2 sample cadence заменён на GPTimer с разрешением 10 MHz: RX 62.5 kHz соответствует 160 тикам (16 мкс), TX 4.8 kHz — 2083 тикам. ISR только уведомляет задачу; DSP + ADC + I²C выполняются в task context.
+7. AVR Timer2 sample cadence заменён на GPTimer с разрешением 10 MHz: RX 62.5 kHz соответствует 1280 тикам (16 мкс), TX 4.8 kHz — 16667 тикам (около 0,002% ошибки). Период округляется до ближайшего целого тика. ISR только уведомляет задачу; DSP + ADC + I²C выполняются в task context.
 8. В sample timer stop добавлено ожидание окончания текущего callback перед переключением RX/TX.
 9. Энкодер PCINT заменён на GPIO interrupts GPIO18/19.
 10. В первом headless профиле отключены DIAG, CAT, CW decoder и LCD fonts; RX, SSB TX, keyer и основной radio state machine оставлены.
@@ -73,3 +73,7 @@ sdr_rx_common_q() выставляет selector 0 для следующего с
 4. Проверить два PWM выхода и Si5351, затем проводить RX/TX bring-up поэтапно.
 
 **Текущий статус:** начальный аппаратный порт написан, но ещё не подтверждён компиляцией и работой на плате. Называть его готовым нельзя.
+
+
+17. Планировщик sample task больше не воспроизводит накопившиеся timer notifications пачкой: при задержке исполняется один callback, а пропущенные таймерные события учитываются отдельно. В Serial раз в 2 секунды выводятся cumulative callback count и dropped timer events. Это позволяет измерить, выдерживает ли система исходную частоту, без искажения времени искусственным догоняющим burst.
+18. GPTimer переведён на 80 MHz; period ticks округляется: RX 1280 тиков / 16 мкс (точно), TX 16667 тиков / 208,3375 мкс (около 0,002% отклонения от 4800 Гц).
