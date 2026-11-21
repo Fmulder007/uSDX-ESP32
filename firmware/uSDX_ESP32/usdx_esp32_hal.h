@@ -338,6 +338,7 @@ inline void usdx_esp32_sample_timer_stop() {
 }
 
 inline void usdx_esp32_begin() {
+  Serial.begin(115200);
   Wire.begin(USDX_PIN_SI5351_SDA, USDX_PIN_SI5351_SCL, 400000);
   if (!usdx_esp32_adc_begin()) {
     Serial.println("WARNING: ADC1 unavailable; RX/TX sample input will remain at midscale.");
