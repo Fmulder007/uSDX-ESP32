@@ -336,13 +336,20 @@ static TaskHandle_t usdx_sample_task_handle = nullptr;
 static void (*usdx_sample_callback)() = nullptr;
 static volatile bool usdx_sample_running = false;
 static volatile bool usdx_sample_callback_busy = false;
+static volatile bool usdx_sample_stop_ack = false;
 static volatile uint32_t usdx_sample_callback_count = 0;
 static volatile uint32_t usdx_sample_dropped_events = 0;
 
 static void usdx_sample_task(void*) {
   for (;;) {
     const uint32_t pending = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-    if (!usdx_sample_running || usdx_sample_callback == nullptr) continue;
+    if (!usdx_sample_running || usdx_sample_callback == nullptr) {
+      // Acknowledge a stop only after the notification has been consumed.
+      // This prevents an old wake-up from leaking into the next RX/TX run.
+      usdx_sample_stop_ack = true;
+      continue;
+    }
+    usdx_sample_stop_ack = false;
 
     // Do not replay an overdue batch at an artificially high sample rate.
     // Process one current event and count events missed while DSP was busy.
@@ -387,6 +394,7 @@ inline bool usdx_esp32_sample_timer_start(uint32_t sampleRate, void (*callback)(
     timerAttachInterrupt(usdx_sample_timer, &usdx_sample_timer_isr);
   }
   timerStop(usdx_sample_timer);
+  usdx_sample_stop_ack = false;
   usdx_sample_running = true;
   timerWrite(usdx_sample_timer, 0);
   const uint64_t alarmTicks = (static_cast<uint64_t>(USDX_TIMER_RESOLUTION_HZ) + sampleRate / 2U) / sampleRate;
@@ -397,11 +405,12 @@ inline bool usdx_esp32_sample_timer_start(uint32_t sampleRate, void (*callback)(
 }
 
 inline void usdx_esp32_sample_timer_stop() {
+  usdx_sample_stop_ack = false;
   usdx_sample_running = false;
   if (usdx_sample_timer != nullptr) timerStop(usdx_sample_timer);
   if (usdx_sample_task_handle != nullptr) {
     xTaskNotifyGive(usdx_sample_task_handle);
-    while (usdx_sample_callback_busy) {
+    while (!usdx_sample_stop_ack || usdx_sample_callback_busy) {
       taskYIELD();
     }
   }
