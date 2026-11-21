@@ -82,3 +82,12 @@
 //#define F_XTAL  20000000   // Enable this for uSDXDuO, 20MHz SI5351 crystal
 //#define TX_CLK0_CLK1   1   // Enable this for uSDXDuO, i.e. when PA is driven by CLK0, CLK1 (not CLK2); NTX pin may be used for enabling the TX path (this is like RX pin, except that RX may also be used as attenuator)
 //#define F_CLK2  12000000   // Enables a fixed CLK2 clock output of choice (only applicable when TX_CLK0_CLK1 is enabled), e.g. for up-converter or to clock UART USB device
+
+
+// ESP32 first-port profile. The analogue DSP and radio control stay enabled;
+// AVR-only diagnostics, UART pin sharing and the CW decoder are deferred.
+#if defined(ARDUINO_ARCH_ESP32)
+#undef DIAG
+#undef CAT
+#undef CW_DECODER
+#endif
