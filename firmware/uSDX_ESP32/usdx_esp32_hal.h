@@ -253,13 +253,16 @@ class UsdxEsp32Timer1Control {
 static UsdxEsp32Timer1Control usdx_tccr1a;
 #define TCCR1A usdx_tccr1a
 
-inline void usdx_esp32_pwm_begin(uint32_t frequency) {
+inline bool usdx_esp32_pwm_begin(uint32_t frequency) {
   const bool audioOk = ledcAttach(USDX_PIN_AUDIO_PWM, frequency, 8);
   const bool paOk = ledcAttach(USDX_PIN_PA_PWM, frequency, 8);
   usdx_ocr1al.setAttached(audioOk);
   usdx_ocr1bl.setAttached(paOk);
   usdx_ocr1al = 0;
   usdx_ocr1bl = 0;
+  if (!audioOk) Serial.printf("LEDC audio attach failed: GPIO%u at %lu Hz\\n", USDX_PIN_AUDIO_PWM, static_cast<unsigned long>(frequency));
+  if (!paOk) Serial.printf("LEDC PA attach failed: GPIO%u at %lu Hz\\n", USDX_PIN_PA_PWM, static_cast<unsigned long>(frequency));
+  return audioOk && paOk;
 }
 inline void usdx_esp32_pwm_stop() {
   usdx_ocr1al = 0;
@@ -339,9 +342,18 @@ inline void usdx_esp32_sample_timer_stop() {
 
 inline void usdx_esp32_begin() {
   Serial.begin(115200);
-  Wire.begin(USDX_PIN_SI5351_SDA, USDX_PIN_SI5351_SCL, 400000);
+  delay(50);
+  Serial.println();
+  Serial.println("uSDX ESP32 port starting");
+  if (!Wire.begin(USDX_PIN_SI5351_SDA, USDX_PIN_SI5351_SCL, 400000)) {
+    Serial.println("ERROR: I2C bus initialization failed.");
+  } else {
+    Serial.println("I2C ready: SDA=21 SCL=22 400kHz");
+  }
   if (!usdx_esp32_adc_begin()) {
-    Serial.println("WARNING: ADC1 unavailable; RX/TX sample input will remain at midscale.");
+    Serial.println("ERROR: ADC1 unavailable; RX/TX sample input will remain at midscale.");
+  } else {
+    Serial.println("ADC1 ready: GPIO36=I, GPIO39=Q, GPIO34=MIC");
   }
 }
 
