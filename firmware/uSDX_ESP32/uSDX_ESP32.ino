@@ -3417,7 +3417,9 @@ void adc_stop()
 void timer1_start(uint32_t fs)
 {
 #if defined(ARDUINO_ARCH_ESP32)
-  usdx_esp32_pwm_begin(fs);
+  if (!usdx_esp32_pwm_begin(fs)) {
+    Serial.println("ERROR: one or more LEDC PWM outputs are unavailable.");
+  }
   TCCR1A = 0;
   TCCR1A |= (1 << COM1A1) | (1 << COM1B1);
 #else
