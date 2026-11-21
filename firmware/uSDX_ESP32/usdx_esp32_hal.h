@@ -8,6 +8,7 @@
 #include <pgmspace.h>
 #include <Wire.h>
 #include <esp_sleep.h>
+#include <esp_err.h>
 #include "esp_adc/adc_oneshot.h"
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
@@ -400,6 +401,8 @@ inline void usdx_esp32_report_sample_stats() {
   Serial.printf("uSDX sample task: callbacks=%lu, dropped timer events=%lu\n",
     static_cast<unsigned long>(callbacks), static_cast<unsigned long>(dropped));
 }
+
+inline bool usdx_esp32_eeprom_begin();
 
 inline void usdx_esp32_begin() {
   Serial.begin(115200);
